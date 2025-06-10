@@ -717,7 +717,7 @@ const Homepage = () => {
                     </button>
 
                     {/* Show "Pages Left: X" */}
-                    <span className="text-gray-700 text-lg font-semibold sm:w-[5px] md:w-[7rem] ">
+                    <span className="text-gray-700 text-lg font-semibold sm:w-[3px] md:w-[7px] ">
                         Page {currentPage} of {totalPages} Pages
                     </span>
 
@@ -726,7 +726,7 @@ const Homepage = () => {
                         disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                     >
-                        <CgPlayTrackNext className="w-7 h-7 mr-2 sm:w-[5rem] md:w-[8rem] " />
+                        <CgPlayTrackNext className="w-7 h-7 mr-2 sm:w-[3rem] md:w-[8rem] " />
                         Next
                     </button>
                 </div>
