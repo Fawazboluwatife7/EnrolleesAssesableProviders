@@ -657,12 +657,12 @@ const Homepage = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="8" className="h-64 text-center">
+                                <td colSpan="8" className="h-10 text-center">
                                     <div className="flex justify-center items-center">
                                         <img
                                             src="./searchz.gif"
                                             alt="No records found"
-                                            className=" w-15 h-5px"
+                                            className=" w-[100px] h-[100px]"
                                         />
                                     </div>
                                     <h1>No provider found</h1>
