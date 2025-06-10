@@ -676,7 +676,7 @@ const Homepage = () => {
             <button
                 type="button"
                 onClick={GetFilteredProviders}
-                className="bg-green-500 text-white px-4 py-2 rounded mt-3 hover:bg-green-600 flex  sm:w-[10rem] md:w-[8rem]  "
+                className="bg-green-500 text-white px-4 py-2 rounded mt-7 hover:bg-green-600 flex  sm:w-[10rem] md:w-[8rem]  "
             >
                 <BsSearch className=" text-white w-6 h-5 pt-1" />
                 Search
@@ -686,7 +686,7 @@ const Homepage = () => {
                 {isSubmitting ? (
                     <button
                         disabled
-                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-green-600 flex gap-2"
+                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
                     >
                         <FaSpinner className="animate-spin text-xl" />
                         Sending Email
@@ -694,7 +694,7 @@ const Homepage = () => {
                 ) : (
                     <button
                         type="button"
-                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-green-600 flex gap-2"
+                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
                         onClick={handleExportAndSendEmail}
                     >
                         <IoIosSend className=" text-white pt-1 h-6 w-6" />
@@ -706,7 +706,7 @@ const Homepage = () => {
             {FilteredProviders?.length > itemsPerPage && (
                 <div className="flex justify-center mt-4 items-center gap-4">
                     <button
-                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex"
+                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[10rem] md:w-[8rem] "
                         disabled={currentPage === 1}
                         onClick={() =>
                             setCurrentPage((prev) => Math.max(prev - 1, 1))
@@ -722,7 +722,7 @@ const Homepage = () => {
                     </span>
 
                     <button
-                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex"
+                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[10rem] md:w-[8rem] "
                         disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                     >
