@@ -520,7 +520,7 @@ const Homepage = () => {
         return pdfBase64;
     };
     return (
-        <div className="w-full p-7 h-[100vh]  bg-gray-200 rounded-lg shadow-md">
+        <div className="w-full p-7 h-[100vh] bg-gray-200 rounded-lg shadow-md">
             <div className=" flex justify-between">
                 <img
                     src="./leadway_health_logo-dashboard.png"
@@ -717,7 +717,7 @@ const Homepage = () => {
                     </button>
 
                     {/* Show "Pages Left: X" */}
-                    <span className="text-gray-700 text-lg font-semibold">
+                    <span className="text-gray-700 text-lg font-semibold sm:w-[5px] md:w-[7rem] ">
                         Page {currentPage} of {totalPages} Pages
                     </span>
 
