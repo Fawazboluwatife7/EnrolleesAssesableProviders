@@ -22,55 +22,50 @@ const Login = () => {
     ];
 
     const user = JSON.parse(localStorage.getItem("user"));
-    useEffect(() => {
-        if (user) {
-            navigate("/home");
-        }
-    }, []);
-    const handleLogin = async () => {
-        if (!email || !password) {
-            setMsg("Email and password are required.");
-            setAlertType("error");
-            return;
-        }
+    // const handleLogin = async () => {
+    //     if (!email || !password) {
+    //         setMsg("Email and password are required.");
+    //         setAlertType("error");
+    //         return;
+    //     }
 
-        setLoading(true);
+    //     setLoading(true);
 
-        try {
-            const response = await fetch(
-                `${apiUrl}/api/Account/ExternalPortalLogin`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        email,
-                        password,
-                        logInSource: "Sales",
-                    }),
-                },
-            );
+    //     try {
+    //         const response = await fetch(
+    //             `${apiUrl}/api/Account/ExternalPortalLogin`,
+    //             {
+    //                 method: "POST",
+    //                 headers: {
+    //                     "Content-Type": "application/json",
+    //                 },
+    //                 body: JSON.stringify({
+    //                     email,
+    //                     password,
+    //                     logInSource: "Sales",
+    //                 }),
+    //             },
+    //         );
 
-            const data = await response.json();
-            console.log(response, data);
-            if (response) setLoading(false);
+    //         const data = await response.json();
+    //         console.log(response, data);
+    //         if (response) setLoading(false);
 
-            if (data.status !== 200) {
-                setMsg(data.ErrorMessage);
-                setAlertType("error");
-                return;
-            }
+    //         if (data.status !== 200) {
+    //             setMsg(data.ErrorMessage);
+    //             setAlertType("error");
+    //             return;
+    //         }
 
-            // Login successful
-            localStorage.setItem("user", JSON.stringify(data));
-            navigate("/home");
-        } catch (err) {
-            setLoading(false);
-            setError("An error occurred. Please try again later.");
-            setTimeout(() => setError(null), 5000);
-        }
-    };
+    //         // Login successful
+    //         localStorage.setItem("user", JSON.stringify(data));
+    //         navigate("/home");
+    //     } catch (err) {
+    //         setLoading(false);
+    //         setError("An error occurred. Please try again later.");
+    //         setTimeout(() => setError(null), 5000);
+    //     }
+    // };
 
     return (
         <div className="flex bg-[#F0F2FA] w-full h-[100vh]">
@@ -148,14 +143,14 @@ const Login = () => {
                     </div>
                 </div>
 
-                <button
+                {/* <button
                     className="lg:w-[80%] w-[90%] bg-[#C61531] mt-8 py-4 rounded-[5px] text-white"
                     type="button"
                     onClick={handleLogin}
                     disabled={loading}
                 >
                     {loading ? "Logging in..." : "Login"}
-                </button>
+                </button> */}
             </div>
             <div className="w-[55%] relative hidden lg:block">
                 <img src="/xxx.jpg" alt="Doctor" className="h-full w-full" />

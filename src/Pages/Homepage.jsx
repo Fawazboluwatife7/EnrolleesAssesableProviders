@@ -5,6 +5,12 @@ import { MdAdd } from "react-icons/md";
 import { FaSpinner } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { CgLogOut } from "react-icons/cg";
+import { RxPerson } from "react-icons/rx";
+import { CgPlayTrackNext } from "react-icons/cg";
+import { MdSkipPrevious } from "react-icons/md";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import { BsSearch } from "react-icons/bs";
 
 const Homepage = () => {
@@ -14,6 +20,15 @@ const Homepage = () => {
     const [company, setCompany] = useState([]);
     const [scheme, setScheme] = useState([]);
     const [gender, setGender] = useState([]);
+    const [lga, setLga] = useState([]);
+    const [selectedState, setState] = useState({
+        Text: "",
+        Value: "",
+    });
+    const [selectedLga, setSelectedLga] = useState({
+        Text: "",
+        Value: "",
+    });
     const [apiSuccessModal, setApiSuccessModal] = useState(false);
     const [allResponses, setAllResponses] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,300 +38,117 @@ const Homepage = () => {
         uniqueMembershipNo: "",
     });
 
-    const [bioData, setBiodata] = useState([]);
+    const [bioData, setBiodata] = useState("");
     const [errorModal, setErrorModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [users, setUser] = useState("");
+    const [state, SetStates] = useState([]);
+    const [enrolleeId, setEnrolleeId] = useState("");
+    const [isLoading, setisLoading] = useState(false);
+    const [FilteredProviders, setFilteredProviders] = useState([]);
 
-    const navigate = useNavigate();
-    const handleNavigate = (path) => {
-        navigate(path);
+    const handleEnroleeeInputChange = (e) => {
+        setEnrolleeId(e.target.value);
     };
+    function DateDropdown({
+        options,
+        selectedValue,
+        sendSelection,
+        className,
+    }) {
+        const handleChange = (event) => {
+            const value = event.target.value;
+            const selectedOption = options.find(
+                (option) => option.value === value,
+            );
 
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    console.log("user", user);
-
-    const [formData, setFormData] = useState({
-        title: "",
-        surname: "",
-        middleName: "",
-        firstName: "",
-        staffNo: "",
-        maritalStatus: "",
-        dob: "",
-        gender: "",
-        address: "",
-        email: "",
-        phone: "",
-        passport: null,
-        company: "",
-        scheme: "",
-        startdate: "",
-        schemeid: "",
-    });
-
-    const [dependants, setDependants] = useState([]);
-    const [modalResponses, setModalResponses] = useState([]);
-    const [showModal, setShowModal] = useState(false);
-    const [dependantData, setDependantData] = useState({
-        title: "",
-        surname: "",
-        middleName: "",
-        firstName: "",
-        staffNo: "",
-        maritalStatus: "",
-        dob: "",
-        gender: "",
-        address: "",
-        email: "",
-        phone: "",
-        passport: null,
-        company: "",
-        scheme: "",
-        startdate: "",
-    });
-    const [relationship, setRelationship] = useState([]);
-
-    const Submit = async () => {
-        setIsSubmitting(true);
-        const allResponses = [];
-
-        const postData = {
-            AddBeneficiary: [
-                {
-                    groupid: formData.company,
-                    MemberShipNo: "",
-                    Parent_Cif: "",
-                    Cif_number: "",
-                    OfflineID: formData.staffNo,
-                    FirstName: formData.firstName,
-                    Surname: formData.surname,
-                    DateOfBirth: formData.dob,
-                    Sex_ID: formData.gender,
-                    MaritalStatus: formData.maritalStatus,
-                    EmailAdress: formData.email,
-                    Home_Phone: formData.phone,
-                    Work_Phone: formData.phone,
-                    Mobile: formData.phone,
-                    Mobile2: formData.phone,
-                    Hospital: "",
-                    Scheme: formData.scheme,
-                    Postal_Phone: formData.phone,
-                    Physical_Add1: formData.address,
-                    Postal_Town_ID: "",
-                    Relationship_ID: 30,
-                    BloodGroup: "",
-                    PreExistingCondition: "",
-                    EnrolleePictureType:
-                        formData.passport?.type?.split("/")[1] || "jpeg",
-                    EnrolleePicture: `data:${formData.passport?.type};base64,${formData.passport?.base64}`,
-
-                    genotype: "",
-                    othernames: "",
-                    regionid: "",
-                    schemeid: formData.schemeId,
-                    startdate: formData.startdate,
-                    registrationsource: "Web",
-                    usercaptured: user?.result[0]?.UserName,
-                },
-            ],
+            // Send both value and label
+            if (selectedOption) {
+                sendSelection(selectedOption);
+            }
         };
-        let filteredResponses = [];
-        console.log(" Principal API sent:", JSON.stringify(postData, null, 2));
-        try {
-            const response = await fetch(
-                `${apiUrl}/api/EnrolleeProfile/AddBeneficiaryList`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(postData),
-                },
-            );
 
-            const data = await response.json();
-
-            console.log(
-                " Principal API Response:",
-                JSON.stringify(data, null, 2),
-            );
-
-            const uniqueNo = data.Enrollee_Numbers?.[0]?.UniqueMembershipNo;
-            setEnrolleeData(uniqueNo);
-
-            // Extract only principal info
-            const principalInfo = {
-                UniqueMembershipNo: uniqueNo || "N/A",
-                EnrolleeName: data.Enrollee_Numbers?.[0]?.EnrolleeName || "N/A",
-            };
-
-            allResponses.push(principalInfo);
-
-            if (data.status !== 200) {
-                const errorMessages = [];
-
-                // Check for errors in Enrollee_Numbers array
-                if (Array.isArray(data?.Enrollee_Numbers)) {
-                    data.Enrollee_Numbers.forEach((enrollee) => {
-                        if (enrollee?.ErrorMessage) {
-                            errorMessages.push(enrollee.ErrorMessage);
-                        }
-                    });
-                }
-
-                // Check for errors in result array
-                if (Array.isArray(data?.result)) {
-                    data.result.forEach((item) => {
-                        if (item?.ErrorMessage) {
-                            errorMessages.push(item.ErrorMessage);
-                        }
-                    });
-                }
-
-                // Check for top-level message
-                if (data?.message && !errorMessages.includes(data.message)) {
-                    errorMessages.push(data.message);
-                }
-
-                // Fallback if no errors found
-                const errorMsg =
-                    errorMessages.length > 0
-                        ? errorMessages.join(", ")
-                        : `Unexpected response: ${JSON.stringify(data)}`;
-
-                setErrorMessage(errorMsg);
-                setErrorModal(true);
-            }
-
-            // Now fetch biodata and submit dependants
-            if (uniqueNo) {
-                const bioResponse = await fetch(
-                    `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${uniqueNo}`,
-                    { method: "GET" },
-                );
-
-                const bioDataJson = await bioResponse.json();
-                const parentId =
-                    bioDataJson.result?.[0]?.Member_ParentMemberUniqueID;
-                setBiodata(parentId);
-
-                if (parentId) {
-                    const dependantResponses =
-                        await submitDependantsSequentially(uniqueNo, parentId);
-                    allResponses.push(...dependantResponses);
-                }
-            }
-
-            console.log(" Summary of Submitted Members:");
-            allResponses.forEach((res, index) => {
-                console.log(`#${index + 1}:`, res);
-            });
-
-            filteredResponses = allResponses.filter((response) => {
-                // Only include responses that don't have both fields as 'N/A'
-                return !(
-                    response.UniqueMembershipNo === "N/A" &&
-                    response.EnrolleeName === "N/A"
-                );
-            });
-        } catch (error) {
-            console.error("Submit error:", error);
-        } finally {
-            setIsSubmitting(false);
-            if (filteredResponses.length > 0) {
-                setAllResponses(filteredResponses);
-                setApiSuccessModal(true);
-            } else {
-                console.log("No valid responses to display");
-            }
-        }
-    };
+        return (
+            <select
+                value={selectedValue?.value || ""} // Ensure it doesn't break if null
+                onChange={handleChange}
+                className={`border border-gray-300 rounded p-2 ${className}`}
+            >
+                <option value="" disabled>
+                    Select Type
+                </option>
+                {options.map((option, index) => (
+                    <option
+                        key={`${option.value}-${index}`}
+                        value={option.value}
+                    >
+                        {option.label}
+                    </option>
+                ))}
+            </select>
+        );
+    }
 
     useEffect(() => {
-        GetTitle();
-        GetMaritalStatus();
-        GetCompany();
-        Gender();
-        GetRelationship();
+        GetStates();
     }, []);
 
-    // const AddBeneficiary = async () => {
-    //     const postData = {
-    //         AddBeneficiary: [
-    //             {
-    //                 groupid: formData.company,
-    //                 MemberShipNo: enrolleeData,
-    //                 Parent_Cif: bioData,
-    //                 Cif_number: "",
-    //                 OfflineID: formData.staffNo,
-    //                 FirstName: dependantData.firstName,
-    //                 Surname: dependantData.surname,
-    //                 DateOfBirth: dependantData.dob,
-    //                 Sex_ID: dependantData.gender,
-    //                 MaritalStatus: "",
-    //                 EmailAdress: formData.email,
-    //                 Home_Phone: formData.phone,
-    //                 Work_Phone: formData.phone,
-    //                 Mobile: formData.phone,
-    //                 Mobile2: formData.phone,
-    //                 Hospital: "",
-    //                 Scheme: formData.scheme,
-    //                 Postal_Phone: formData.phone,
-    //                 Physical_Add1: formData.address,
-    //                 Postal_Town_ID: "",
-    //                 Relationship_ID: dependantData.relationship,
-    //                 BloodGroup: "",
-    //                 PreExistingCondition: "",
-    //                 EnrolleePictureType: "jpeg",
-    //                 EnrolleePicture: "data:image/jpeg;base64,...",
-    //                 genotype: "",
-    //                 othernames: "",
-    //                 regionid: "",
-    //                 schemeid: formData.schemeId,
-    //                 startdate: formData.startdate,
-    //                 registrationsource: "Web",
-    //                 usercaptured: "firstbillspay@firstbankgroup.com",
-    //             },
-    //         ],
-    //     };
+    useEffect(() => {
+        if (selectedState.value) GetLGA();
+    }, [selectedState.value]);
 
-    //     console.log(
-    //         "Sending beneficiary to API:",
-    //         JSON.stringify(postData, null, 2),
-    //     );
+    useEffect(() => {
+        if (selectedLga.Value) GetFilteredProviders();
+    }, [selectedLga.Value]);
+    async function GetStates() {
+        try {
+            const states = await fetch(`${apiUrl}api/ListValues/GetStates`, {
+                method: "GET",
+            });
+            const response = await states.json();
+            console.log("states", response);
+            SetStates(response);
+        } catch (error) {
+            console.error("Error fetching states", error);
+        }
+    }
 
-    //     try {
-    //         const response = await fetch(
-    //             `${apiUrl}/api/EnrolleeProfile/AddBeneficiaryList`,
-    //             {
-    //                 method: "POST",
-    //                 headers: {
-    //                     "Content-Type": "application/json",
-    //                 },
-    //                 body: JSON.stringify(postData),
-    //             },
-    //         );
+    async function GetFilteredProviders() {
+        setisLoading(true);
+        try {
+            const providers = await fetch(
+                `${apiUrl}api/EnrolleeProfile/GetEnrolleeProvidersListsAll?schemeid=0&MinimumID=0&NoOfRecords=50020&pageSize=20000&ProviderName=&TypeID=0&StateID=${selectedState.value}&LGAID=${selectedLga.Value}&enrolleeid=${enrolleeId}&provider_id=0`,
+                {
+                    method: "GET",
+                },
+            );
 
-    //         if (!response.ok) {
-    //             throw new Error(`HTTP error! Status: ${response.status}`);
-    //         }
+            const apiResponse = await providers.json();
+            console.log("providers", apiResponse);
+            setFilteredProviders(apiResponse.result);
+        } catch (error) {
+            console.error("Error fetching filtered providers", error);
+        } finally {
+            setisLoading(false);
+        }
+    }
 
-    //         const data = await response.json();
+    async function GetLGA() {
+        try {
+            const lga = await fetch(
+                `${apiUrl}api/ListValues/GetCitiesByStates?state=${selectedState.value}`,
+                {
+                    method: "GET",
+                },
+            );
 
-    //         if (data.status === 200 && data.VisitID) {
-    //             alert(`Visit ID ${data.VisitID} generated successfully!`);
-    //             setVisitId(data.VisitID);
-    //         } else {
-    //             alert(`Unexpected response: ${JSON.stringify(data)}`);
-    //         }
-
-    //         SetData(data);
-    //         console.log("Success:", data);
-    //     } catch (error) {
-    //         console.error("Error submitting data:", error);
-    //     } finally {
-    //     }
-    // };
+            const response = await lga.json();
+            console.log("Lga", response);
+            setLga(response);
+        } catch (error) {
+            console.error("Error fetching lga", error);
+        }
+    }
 
     useEffect(() => {
         if (enrolleeData != null) {
@@ -340,194 +172,6 @@ const Homepage = () => {
             setBiodata(data.result[0].Member_ParentMemberUniqueID);
         } catch (error) {
             console.error("get title:", error);
-        }
-    }
-
-    // const handleAddDependant = () => {
-    //     if (
-    //         !dependantData.image?.name ||
-    //         !dependantData.surname ||
-    //         !dependantData.firstName ||
-    //         !dependantData.dob ||
-    //         !dependantData.gender ||
-    //         !dependantData.relationship
-    //     ) {
-    //         setErrorMessage("Please fill out all fields before saving.");
-    //         return;
-    //     }
-
-    //     // If all fields are filled, clear error and continue
-    //     setErrorMessage("");
-    //     setDependants((prev) => [...prev, dependantData]);
-    //     setDependantData({});
-    // };
-
-    const handleAddDependant = () => {
-        setDependants((prev) => [...prev, dependantData]); // dependantData is your form state
-        setDependantData({}); // clear dependant form if needed
-    };
-
-    const submitDependantsSequentially = async (enrolleeData, bioData) => {
-        const responses = [];
-
-        for (const dependant of dependants) {
-            const postData = {
-                AddBeneficiary: [
-                    {
-                        groupid: formData.company,
-                        MemberShipNo: enrolleeData,
-                        Parent_Cif: bioData,
-                        Cif_number: "",
-                        OfflineID: formData.staffNo,
-                        FirstName: dependant.firstName,
-                        Surname: dependant.surname,
-                        DateOfBirth: dependant.dob,
-                        Sex_ID: dependant.gender,
-                        MaritalStatus: "",
-                        EmailAdress: formData.email,
-                        Home_Phone: formData.phone,
-                        Work_Phone: formData.phone,
-                        Mobile: formData.phone,
-                        Mobile2: formData.phone,
-                        Hospital: "",
-                        Scheme: formData.scheme,
-                        Postal_Phone: formData.phone,
-                        Physical_Add1: formData.address,
-                        Postal_Town_ID: "",
-                        Relationship_ID: dependant.relationship,
-                        BloodGroup: "",
-                        PreExistingCondition: "",
-                        EnrolleePictureType:
-                            dependant.passport?.type?.split("/")[1] || "jpeg",
-                        EnrolleePicture: `data:${dependant.passport?.type};base64,${dependant.passport?.base64}`,
-
-                        genotype: "",
-                        othernames: "",
-                        regionid: "",
-                        schemeid: formData.schemeId,
-                        startdate: formData.startdate,
-                        registrationsource: "Web",
-                        usercaptured: user?.result[0]?.UserName,
-                    },
-                ],
-            };
-
-            console.log(
-                " dependant API sent:",
-                JSON.stringify(postData, null, 2),
-            );
-            try {
-                const response = await fetch(
-                    `${apiUrl}/api/EnrolleeProfile/AddBeneficiaryList`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(postData),
-                    },
-                );
-
-                const data = await response.json();
-                console.log(
-                    " dependant API Response:",
-                    JSON.stringify(data, null, 2),
-                );
-
-                const enrolleeInfo = {
-                    UniqueMembershipNo:
-                        data.Enrollee_Numbers?.[0]?.UniqueMembershipNo || "N/A",
-                    EnrolleeName:
-                        data.Enrollee_Numbers?.[0]?.EnrolleeName || "N/A",
-                };
-
-                responses.push(enrolleeInfo);
-            } catch (error) {
-                responses.push({
-                    UniqueMembershipNo: "Error",
-                    EnrolleeName: error.message,
-                });
-            }
-        }
-
-        return responses;
-    };
-
-    async function GetTitle() {
-        try {
-            const response = await fetch(`${apiUrl}api/ListValues/GetTitles`, {
-                method: "GET",
-            });
-
-            const data = await response.json();
-
-            console.log("data", data);
-
-            setTitle(data.result);
-        } catch (error) {
-            console.error("get title:", error);
-        }
-    }
-    async function GetRelationship() {
-        try {
-            const response = await fetch(
-                `${apiUrl}api/ListValues/GetBeneficiaryRelationship`,
-                {
-                    method: "GET",
-                },
-            );
-
-            const data = await response.json();
-
-            console.log("relationship", data);
-
-            setRelationship(data);
-        } catch (error) {
-            console.error("get title:", error);
-        }
-    }
-
-    async function GetMaritalStatus() {
-        try {
-            const response = await fetch(
-                `${apiUrl}api/ListValues/GetMaritalStatus`,
-                {
-                    method: "GET",
-                },
-            );
-
-            const data = await response.json();
-
-            setMarital(data.result);
-        } catch (error) {
-            console.error("get Marital:", error);
-        }
-    }
-
-    async function Gender() {
-        try {
-            const response = await fetch(`${apiUrl}api/ListValues/GetGender`, {
-                method: "GET",
-            });
-
-            const data = await response.json();
-            console.log("gender", data.result);
-            setGender(data.result);
-        } catch (error) {
-            console.error("get Gender:", error);
-        }
-    }
-
-    async function GetCompany() {
-        try {
-            const response = await fetch(`${apiUrl}api/ListValues/GetGroups`, {
-                method: "GET",
-            });
-
-            const data = await response.json();
-            console.log("data", data);
-
-            setCompany(data.result);
-        } catch (error) {
-            console.error("get Marital:", error);
         }
     }
 
@@ -632,9 +276,6 @@ const Homepage = () => {
         // The enrolleeData and bioData updates will trigger the useEffect to handle dependants
     };
 
-    const [companySearch, setCompanySearch] = useState("");
-    const [filteredCompanies, setFilteredCompanies] = useState([]);
-
     const handleCompanySearchChange = (value) => {
         setCompanySearch(value);
         if (value.trim() === "") {
@@ -654,697 +295,440 @@ const Homepage = () => {
         setFilteredCompanies([]);
     };
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    const totalPages = Math.ceil(FilteredProviders?.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    const paginatedResults = FilteredProviders?.slice(startIndex, endIndex);
+    const [enrolleeBioData, SetEnrolleeBioData] = useState([]);
+
+    useEffect(() => {
+        if (enrolleeId) {
+            SearchEnrolleeBiodata();
+        }
+    }, [enrolleeId]);
+
+    async function SearchEnrolleeBiodata() {
+        try {
+            const response = await fetch(
+                `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`,
+                {
+                    method: "GET",
+                },
+            );
+            const data = await response.json();
+            console.log(
+                "enrolleeEmail",
+                data.result[0].Member_EmailAddress_One,
+            );
+
+            const email = data.result[0].Member_EmailAddress_One;
+            if (!email) {
+                setErrorModal(true);
+            }
+            SetEnrolleeBioData(data.result[0].Member_EmailAddress_One);
+        } catch (error) {
+            console.error("Error fetching enrollees:", error);
+            setEnrollees([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const handleExportAndSendEmail = async () => {
+        setIsSubmitting(true);
+        if (!FilteredProviders || FilteredProviders.length === 0) {
+            alert("No data to export!");
+            return;
+        }
+
+        try {
+            // Generate PDF with the table data
+            const pdfBase64 = generatePdfBase64(FilteredProviders);
+
+            const postData = {
+                EmailAddress: enrolleeBioData,
+                CC: "",
+                BCC: "",
+                Subject: "Leadway Health Provider List",
+                MessageBody:
+                    "Dear Enrollee, here are the lists of providers that you can access under your plan. Please find the attached PDF document.",
+                Attachments: [
+                    {
+                        FileName: "Providers.pdf",
+                        ContentType: "application/pdf",
+                        Base64Data: pdfBase64,
+                    },
+                ],
+                Category: "",
+                UserId: 0,
+                ProviderId: 0,
+                ServiceId: 0,
+                Reference: "",
+                TransactionType: "",
+            };
+
+            console.log(
+                "Submitting email with PDF attachment:",
+                JSON.stringify(
+                    {
+                        ...postData,
+                        Attachments: [
+                            {
+                                ...postData.Attachments[0],
+                                Base64Data: pdfBase64,
+                            },
+                        ],
+                    },
+                    null,
+                    2,
+                ),
+            );
+
+            const response = await fetch(
+                `${apiUrl}api/EnrolleeProfile/SendEmailAlert`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(postData),
+                },
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(
+                    `HTTP error! Status: ${response.status}, Details: ${errorText}`,
+                );
+            }
+
+            const data = await response.json();
+            alert("Email with PDF attachment sent successfully!");
+            console.log("Response:", data);
+        } catch (error) {
+            console.error("Error sending email:", error);
+            alert(`Failed to send email: ${error.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const generatePdfBase64 = (data) => {
+        const doc = new jsPDF();
+
+        // Add title
+        doc.setFontSize(18);
+        doc.setTextColor(200, 30, 54);
+        doc.text("Leadway Health Providers", 105, 15, { align: "center" });
+
+        // Add subtitle
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0); // Black
+        doc.text("List of Available Providers Under Your Plan", 105, 25, {
+            align: "center",
+        });
+
+        // Current date
+        const today = new Date();
+        const dateStr = today.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${dateStr}`, 105, 35, { align: "center" });
+
+        // Format data for the table
+        const tableData = data.map(
+            ({ provider, phone1, phone2, Discipline, ProviderAddress }) => [
+                provider?.trim() || "N/A",
+                phone1?.trim() || "N/A",
+                phone2?.trim() || "N/A",
+                Discipline || "N/A",
+                ProviderAddress || "N/A",
+            ],
+        );
+
+        // Define column headers
+        const tableHeaders = [
+            [
+                "Provider Name",
+                "Primary Phone",
+                "Alternative Phone",
+                "Discipline",
+                "Address",
+            ],
+        ];
+
+        // Generate the table
+        autoTable(doc, {
+            head: tableHeaders,
+            body: tableData,
+            startY: 40,
+            styles: {
+                fontSize: 10,
+                cellPadding: 3,
+                overflow: "linebreak",
+            },
+            headStyles: {
+                fillColor: [200, 30, 54], // Red Leadway color
+                textColor: 255,
+                fontStyle: "bold",
+            },
+            columnStyles: {
+                0: { cellWidth: "auto" }, // Provider name column
+                1: { cellWidth: "auto" }, // Primary phone column
+                2: { cellWidth: "auto" }, // Alternative phone column
+                3: { cellWidth: 30 }, // Discipline column
+                4: { cellWidth: "auto" }, // Address column - auto width
+            },
+            alternateRowStyles: {
+                fillColor: [245, 245, 245], // Light gray for alternate rows
+            },
+            margin: { top: 40 },
+        });
+
+        // Add page numbers if the table spans multiple pages
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.text(
+                `Page ${i} of ${pageCount}`,
+                105,
+                doc.internal.pageSize.height - 10,
+                { align: "center" },
+            );
+        }
+
+        // Add footer with company info
+        doc.setPage(pageCount);
+        doc.setFontSize(9);
+        const footerText =
+            "© Leadway Health - This document is automatically generated";
+        doc.text(footerText, 105, doc.internal.pageSize.height - 20, {
+            align: "center",
+        });
+
+        // Convert PDF to base64 string
+        const pdfBase64 = doc.output("datauristring").split(",")[1];
+
+        return pdfBase64;
+    };
     return (
-        <div className="w-full p-7  bg-gray-200 rounded-lg shadow-md">
+        <div className="w-full p-7 h-[100vh]  bg-gray-200 rounded-lg shadow-md">
             <div className=" flex justify-between">
                 <img
                     src="./leadway_health_logo-dashboard.png"
                     alt=""
                     className="  sm:w-[5rem] md:w-[7rem] lg:w-[10rem] w-[7rem]"
                 />
-                <div className=" flex  cursor-pointer" onClick={logout}>
-                    <CgLogOut className=" text-red-700 mt-1.5" />
-                    <h3 className="text-red-700">Logout</h3>
-                </div>
             </div>
 
-            <h1 className="font-bold text-center mb-6 text-red-700 sm:text-[10px] md:text-[15px] lg:text-[30px] text-[16px]">
-                Please fill the form below. All fields are mandatory
+            <h1 className="font-bold text-center mb-6 gap-4 text-red-700 sm:text-[10px] md:text-[15px] lg:text-[30px] text-[16px]">
+                Please fill all required fields.
             </h1>
 
-            <div className="grid grid-cols-1 w-full md:grid-cols-2 gap-4  sm:mx-[8rem] md:mx-[0.1rem] lg:mx-[0.1rem]">
-                <div>
-                    {/* <select
-                        name="company"
-                        className="w-full border rounded p-2"
-                        value={formData.company}
-                        onChange={(e) => {
-                            const selectedId = parseInt(e.target.value); // Convert string to number
-                            const selectedItem = company.find(
-                                (c) => c.GROUP_ID === selectedId,
-                            );
-
-                            setFormData({ ...formData, company: selectedId });
-
-                            if (selectedItem) {
-                                setSelectedGroupId(selectedId);
-                            }
-                        }}
-                        required
-                    >
-                        <option value="">Select</option>
-                        {company.length === 0 ? (
-                            <option value="">Loading companies...</option>
-                        ) : (
-                            company.map((items) => (
-                                <option
-                                    key={items.GROUP_ID}
-                                    value={items.GROUP_ID}
-                                >
-                                    {items.GROUP_NAME}
-                                </option>
-                            ))
-                        )}
-                    </select> */}
-
-                    <label className="font-semibold ">Company</label>
-                    <div className="relative w-full border flex items-center rounded">
-                        <BsSearch className="h-5 w-5 absolute left-2" />
+            <div className="grid sm:grid-cols-1  md:grid-cols-3  lg:grid-cols-3 gap-4  sm:mx-[8rem] md:mx-[0.1rem] lg:mx-[0.1rem]">
+                <div className="relative w-[full]  ">
+                    <label className="block mb-2 text-gray-700 font-medium">
+                        Input Enrollee Id
+                    </label>
+                    <div className="relative w-full">
+                        <RxPerson
+                            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black"
+                            size={20}
+                        />
                         <input
                             type="text"
-                            placeholder="Search company"
-                            className="w-full h-10 pl-10 outline-none rounded"
-                            value={companySearch}
-                            onChange={(e) =>
-                                handleCompanySearchChange(e.target.value)
-                            }
-                            required
+                            placeholder="Enter Enrollee Id"
+                            value={enrolleeId}
+                            onChange={handleEnroleeeInputChange}
+                            className="w-full h-11 pl-10 pr-3 rounded-lg border border-gray-300 focus:outline-none "
                         />
                     </div>
-
-                    {filteredCompanies.length > 0 && (
-                        <ul className="border border-gray-300 mt-1 bg-white shadow-lg rounded-md absolute z-10  w-3/4 sm:w-1/2 md:w-1/2 lg:w-[47.5%] max-h-60 overflow-y-auto">
-                            {filteredCompanies.slice(0, 5).map((c) => (
-                                <li
-                                    key={c.GROUP_ID}
-                                    className="p-2 hover:bg-gray-200 cursor-pointer"
-                                    onClick={() => handleCompanySelect(c)}
-                                >
-                                    {c.GROUP_NAME}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
                 </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">
-                        Scheme
+                <div className="relative w-[full]   ">
+                    <label className="block mb-2 text-gray-700 font-medium">
+                        State of Residence
                     </label>
-                    <select
-                        name="scheme"
-                        className="w-full border rounded p-2"
-                        value={JSON.stringify({
-                            name: formData.scheme,
-                            id: formData.schemeId,
-                        })}
-                        onChange={(e) => {
-                            const selected = JSON.parse(e.target.value);
-                            setFormData({
-                                ...formData,
-                                scheme: selected.name,
-                                schemeId: selected.id,
-                            });
-                        }}
-                    >
-                        <option value="">Select</option>
-                        {scheme.length === 0 ? (
-                            <option value="" disabled>
-                                No scheme available
-                            </option>
-                        ) : (
-                            scheme.map((item) => (
-                                <option
-                                    key={item.PlanID}
-                                    value={JSON.stringify({
-                                        name: item.PlanName,
-                                        id: item.PlanID,
-                                    })}
-                                >
-                                    {item.PlanName}
-                                </option>
-                            ))
-                        )}
-                    </select>
+                    <DateDropdown
+                        key="service-dropdown"
+                        options={state.map((type) => ({
+                            label: type.Text,
+                            value: type.Value,
+                        }))}
+                        selectedValue={selectedState}
+                        sendSelection={(selectedOption) =>
+                            setState(selectedOption)
+                        }
+                        className="relative w-full h-[44px] rounded-lg outline-none"
+                    />
+                </div>
+
+                <div className="relative w-[full]  ">
+                    <label className="block mb-2 text-gray-700 font-medium">
+                        Local Govt
+                    </label>
+                    <DateDropdown
+                        key="service-dropdown"
+                        options={lga.map((type) => ({
+                            label: type.Text,
+                            value: type.Value,
+                        }))}
+                        selectedValue={selectedLga}
+                        sendSelection={(selectedOption) =>
+                            setSelectedLga(selectedOption)
+                        }
+                        className="relative w-full h-[44px] rounded-lg outline-none"
+                    />
                 </div>
             </div>
-            <p className=" pt-3 text-red-700 font-bold ml-1">
-                Kindly Enter Your Personal Details Below
-            </p>
+            <div className="max-h-[400px] overflow-y-auto mt-5">
+                <table className="w-full text-sm text-left rtl:text-right text-black rounded-md border-collapse mt-3">
+                    <thead className="text-base uppercase bg-white border-b border-gray-200 sticky top-0 z-10">
+                        <tr className="border-b border-gray-200 bg-white">
+                            <th className="px-6 py-3 text-[13px]">S/N</th>
 
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    Submit();
-                }}
+                            <th className="px-3 py-3 text-[13px]">Provider</th>
+                            <th className="px-3 py-3 text-[13px]">
+                                Speciality
+                            </th>
+
+                            <th className="px-3 py-3 text-[13px]">Address</th>
+                            <th className="px-3 py-3 text-[13px]">Email</th>
+                        </tr>
+                    </thead>
+
+                    {/* Table Body */}
+                    <tbody>
+                        {isLoading ? (
+                            <tr>
+                                <td colSpan="8" className="h-64 text-center">
+                                    <div className="flex flex-col items-center justify-center h-full space-y-2">
+                                        <img
+                                            src="./loaderx.gif"
+                                            alt="Loading animation"
+                                            className="w-40 h-40" /* Adjust size as needed */
+                                        />
+                                        <h3 className="text-gray-600 text-lg font-semibold">
+                                            Please Wait, Fetching Providers...
+                                        </h3>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : FilteredProviders &&
+                          FilteredProviders.length > 0 ? (
+                            paginatedResults.map((enrollee, index) => (
+                                <tr
+                                    key={index}
+                                    className="bg-white border border-gray-200 hover:bg-gray-200 cursor-pointer"
+                                >
+                                    <td className="px-3 py-3">
+                                        {startIndex + index + 1}
+                                    </td>
+
+                                    <td className="px-3 py-3 text-[13px]">
+                                        {enrollee.FullName ||
+                                            enrollee.provider ||
+                                            "N/A"}
+                                    </td>
+                                    <td className="px-3 py-3 text-[13px]">
+                                        {enrollee.Specialty ||
+                                            enrollee.Discipline ||
+                                            "N/A"}
+                                    </td>
+                                    <td className="px-3 py-3 text-[13px]">
+                                        {enrollee.add1 ||
+                                            enrollee.ProviderAddress ||
+                                            "N/A"}
+                                    </td>
+
+                                    <td className="px-3 py-3 text-[13px]">
+                                        {enrollee.Email ||
+                                            enrollee.email ||
+                                            "N/A"}
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="8" className="h-64 text-center">
+                                    <div className="flex justify-center items-center">
+                                        <img
+                                            src="./searchz.gif"
+                                            alt="No records found"
+                                            className=" w-15 h-5px"
+                                        />
+                                    </div>
+                                    <h1>No provider found</h1>
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            <button
+                type="button"
+                onClick={GetFilteredProviders}
+                className="bg-green-500 text-white px-4 py-2 rounded mt-3 hover:bg-green-600 flex  sm:w-[10rem] md:w-[8rem]  "
             >
-                {/* Personal Details Section */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Title
-                        </label>
-                        <select
-                            name="title"
-                            className="w-full border rounded p-2"
-                            value={formData.title}
-                            onChange={handleInputChange}
-                            required
-                        >
-                            <option value="">Select</option>
-                            {title.map((item) => (
-                                <option
-                                    key={item.title_id}
-                                    value={item.title_id}
-                                >
-                                    {item.title || "No scheme availabe"}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                <BsSearch className=" text-white w-6 h-5 pt-1" />
+                Search
+            </button>
 
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Surname
-                        </label>
-                        <input
-                            type="text"
-                            name="surname"
-                            className="w-full border rounded p-2"
-                            placeholder="Enter Surname"
-                            value={formData.surname}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Middle Name
-                        </label>
-                        <input
-                            type="text"
-                            name="middleName"
-                            className="w-full border rounded p-2"
-                            placeholder="Enter MiddleName"
-                            value={formData.middleName}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            First Name
-                        </label>
-                        <input
-                            type="text"
-                            name="firstName"
-                            className="w-full border rounded p-2"
-                            placeholder="Enter First Name"
-                            value={formData.firstName}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Staff No
-                        </label>
-                        <input
-                            type="text"
-                            name="staffNo"
-                            className="w-full border rounded p-2"
-                            placeholder="Enter Staff Number"
-                            value={formData.staffNo}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Marital Status
-                        </label>
-                        <select
-                            name="maritalStatus"
-                            className="w-full border rounded p-2"
-                            value={formData.maritalStatus}
-                            onChange={handleInputChange}
-                            required
-                        >
-                            <option value="">Select </option>
-                            {marital.map((items) => (
-                                <option
-                                    key={items.Marital_statusid}
-                                    value={items.Marital_statusid}
-                                >
-                                    {items.MaritalStatus}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Date of Birth
-                        </label>
-                        <input
-                            type="date"
-                            name="dob"
-                            className="w-full border rounded p-2"
-                            value={formData.dob}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Gender
-                        </label>
-                        <select
-                            name="gender"
-                            className="w-full border rounded p-2"
-                            value={formData.gender}
-                            onChange={handleInputChange}
-                            required
-                        >
-                            <option value="">Select </option>
-                            {gender.map((items) => (
-                                <option key={items.Sex_id} value={items.Sex_id}>
-                                    {items.Sex}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className>
-                        <label className="block text-sm font-medium mb-1">
-                            Address
-                        </label>
-                        <input
-                            type="text"
-                            name="address"
-                            className="w-full border rounded p-2"
-                            placeholder="Enter Address"
-                            value={formData.address}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Email Address
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            className="w-full border rounded p-2"
-                            placeholder="Enter Email address"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Phone Number
-                        </label>
-                        <input
-                            type="tel"
-                            name="phone"
-                            className="w-full border rounded p-2"
-                            placeholder="Enter phone number"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Start Date
-                        </label>
-                        <input
-                            type="date"
-                            name="startdate"
-                            className="w-full border rounded p-2"
-                            value={formData.startdate}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Passport Photo
-                        </label>
-                        <div className="border rounded p-2">
-                            <input
-                                type="file"
-                                name="passport"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                                className="w-full"
-                                required
-                            />
-                            <p className="text-sm text-gray-500 mt-1">
-                                {formData.passport
-                                    ? formData.passport.name
-                                    : "No file chosen"}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Dependants Section */}
-                <div className="mb-3">
-                    <h2 className="text-xl font-semibold mb-4">Dependants</h2>
-
-                    {dependants.length > 0 && (
-                        <div className="overflow-x-auto mb-4">
-                            <table className="min-w-full border">
-                                <thead>
-                                    <tr className="bg-gray-100 ">
-                                        <th className="border p-2 text-left">
-                                            Image
-                                        </th>
-                                        <th className="border p-2 text-left">
-                                            Surname
-                                        </th>
-                                        <th className="border p-2 text-left">
-                                            Othername
-                                        </th>
-                                        <th className="border p-2 text-left">
-                                            Date of Birth
-                                        </th>
-                                        <th className="border p-2 text-left"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="border-b-black">
-                                    {dependants.map((dependant, index) => (
-                                        <tr
-                                            key={index}
-                                            className="border !border-b-black"
-                                        >
-                                            <td className="p-2">
-                                                {dependant.image?.name ||
-                                                    "No file chosen"}
-                                            </td>
-                                            <td className="p-2">
-                                                {dependant.surname}
-                                            </td>
-                                            <td className="p-2">
-                                                {dependant.firstName}
-                                            </td>
-                                            <td className="p-2">
-                                                {dependant.dob}
-                                            </td>
-                                            <td className="p-2">
-                                                <button
-                                                    onClick={() =>
-                                                        handleDeleteDependant(
-                                                            index,
-                                                        )
-                                                    }
-                                                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
+            <div className=" flex justify-items-end justify-end">
+                {isSubmitting ? (
                     <button
-                        type="button"
-                        onClick={() => setShowModal(true)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex  sm:w-[14rem] md:w-[14rem]  "
+                        disabled
+                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-green-600 flex gap-2"
                     >
-                        <MdAdd className=" text-white w-7 h-7" />
-                        Add New Dependant
+                        <FaSpinner className="animate-spin text-xl" />
+                        Sending Email
                     </button>
-                </div>
-                {/* <div className=" flex justify-between">
-                    <div></div>
+                ) : (
                     <button
                         type="button"
                         className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-green-600 flex gap-2"
-                        onClick={Submit}
+                        onClick={handleExportAndSendEmail}
                     >
                         <IoIosSend className=" text-white pt-1 h-6 w-6" />
-                        Submit Records
+                        Send Via Email...
                     </button>
-                </div> */}
-                <div className=" flex justify-items-end justify-end">
-                    {isSubmitting ? (
-                        <button
-                            disabled
-                            className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-green-600 flex gap-2"
-                        >
-                            <FaSpinner className="animate-spin text-xl" />
-                            Submitting...
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-green-600 flex gap-2"
-                            onClick={Submit}
-                        >
-                            <IoIosSend className=" text-white pt-1 h-6 w-6" />
-                            Submit Records
-                        </button>
-                    )}
-                </div>
-            </form>
+                )}
+            </div>
 
-            {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50   px-2 ">
-                    <div className="bg-white p-6 rounded-lg w-full max-w-md">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">
-                                Add New Dependant
-                            </h3>
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <h3 className=" text-red-700">
-                            All fields are compulsory
-                        </h3>
+            {FilteredProviders?.length > itemsPerPage && (
+                <div className="flex justify-center mt-4 items-center gap-4">
+                    <button
+                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex"
+                        disabled={currentPage === 1}
+                        onClick={() =>
+                            setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                    >
+                        <MdSkipPrevious className="w-7 h-7 mr-2" />
+                        Previous
+                    </button>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Passport Image
-                                </label>
-                                <div className="border rounded p-2">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleDependantFileChange}
-                                        className="w-full"
-                                        required
-                                    />
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        {dependantData.image?.name}
-                                    </p>
-                                </div>
-                            </div>
+                    {/* Show "Pages Left: X" */}
+                    <span className="text-gray-700 text-lg font-semibold">
+                        Page {currentPage} of {totalPages} Pages
+                    </span>
 
-                            <div className=" grid grid-cols-2 gap-2 ">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">
-                                        Surname
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="surname"
-                                        className="w-full border rounded p-2"
-                                        value={dependantData.surname}
-                                        onChange={handleDependantChange}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">
-                                        Other Names
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="firstName"
-                                        className="w-full border rounded p-2"
-                                        value={dependantData.firstName}
-                                        onChange={handleDependantChange}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Date of Birth
-                                </label>
-                                <input
-                                    type="date"
-                                    name="dob"
-                                    className="w-full border rounded p-2"
-                                    value={dependantData.dob}
-                                    onChange={handleDependantChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">
-                                        Gender
-                                    </label>
-                                    <select
-                                        name="gender"
-                                        className="w-full border rounded p-2"
-                                        value={dependantData.gender}
-                                        onChange={handleDependantChange}
-                                        required
-                                    >
-                                        <option value="">Select </option>
-                                        {gender.map((items) => (
-                                            <option
-                                                key={items.Sex_id}
-                                                value={items.Sex_id}
-                                            >
-                                                {items.Sex}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">
-                                        Relationship
-                                    </label>
-                                    <select
-                                        name="relationship"
-                                        className="w-full border rounded p-2"
-                                        value={dependantData.relationship}
-                                        onChange={handleDependantChange}
-                                        required
-                                    >
-                                        <option value="">Select </option>
-                                        {relationship?.map((items) => (
-                                            <option
-                                                key={items.Value}
-                                                value={items.Value}
-                                            >
-                                                {items.Text}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 flex justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setShowModal(false)}
-                                className="px-4 py-2 border rounded hover:bg-gray-50"
-                            >
-                                Close
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleAddDependant}
-                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                            >
-                                Save changes
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {apiSuccessModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-gray-200 rounded-lg p-6 w-full max-w-md">
-                        <h2 className="text-xl font-bold mb-4 text-center">
-                            Submitted Members
-                        </h2>
-                        <ul className="space-y-2 max-h-60 overflow-y-auto">
-                            {allResponses.map((res, index) => (
-                                <li
-                                    key={index}
-                                    className="border p-2 rounded text-sm"
-                                >
-                                    <strong>#{index + 1}</strong> <br />
-                                    <span>
-                                        <strong>EnrolleeName:</strong>{" "}
-                                        {res.EnrolleeName}
-                                    </span>
-                                    <br />
-                                    <span>
-                                        <strong>Membership No:</strong>{" "}
-                                        {res.UniqueMembershipNo}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                        <div className="text-center mt-4">
-                            <button
-                                onClick={() => setApiSuccessModal(false)}
-                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {errorModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md border-l-4 border-red-500">
-                        <div className="flex items-center mb-4">
-                            <div className="bg-red-100 p-2 rounded-full mr-3">
-                                <svg
-                                    className="h-6 w-6 text-red-500"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
-                            </div>
-                            <h2 className="text-xl font-bold text-red-700">
-                                Error
-                            </h2>
-                        </div>
-
-                        <div className="mb-6">
-                            <p className="text-gray-700">{errorMessage}</p>
-                        </div>
-
-                        <div className="flex justify-end">
-                            <button
-                                onClick={() => setErrorModal(false)}
-                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded mr-2"
-                            >
-                                Dismiss
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setErrorModal(false);
-                                    // You could add retry logic here if needed
-                                }}
-                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                            >
-                                OK
-                            </button>
-                        </div>
-                    </div>
+                    <button
+                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setCurrentPage((prev) => prev + 1)}
+                    >
+                        <CgPlayTrackNext className="w-7 h-7 mr-2" />
+                        Next
+                    </button>
                 </div>
             )}
         </div>
