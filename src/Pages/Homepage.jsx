@@ -706,7 +706,7 @@ const Homepage = () => {
             {FilteredProviders?.length > itemsPerPage && (
                 <div className="flex justify-center mt-4 items-center gap-4">
                     <button
-                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[10rem] md:w-[8rem] "
+                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[5rem] md:w-[10rem] "
                         disabled={currentPage === 1}
                         onClick={() =>
                             setCurrentPage((prev) => Math.max(prev - 1, 1))
@@ -722,7 +722,7 @@ const Homepage = () => {
                     </span>
 
                     <button
-                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[10rem] md:w-[8rem] "
+                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[5rem] md:w-[10rem] "
                         disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                     >
