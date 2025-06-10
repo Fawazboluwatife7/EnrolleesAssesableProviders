@@ -712,7 +712,7 @@ const Homepage = () => {
                             setCurrentPage((prev) => Math.max(prev - 1, 1))
                         }
                     >
-                        <MdSkipPrevious className="w-7 h-7 mr-2" />
+                        <MdSkipPrevious className="w-7 h-7 mr-2 sm:w-[5rem] md:w-[8rem] " />
                         Previous
                     </button>
 
@@ -726,7 +726,7 @@ const Homepage = () => {
                         disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                     >
-                        <CgPlayTrackNext className="w-7 h-7 mr-2" />
+                        <CgPlayTrackNext className="w-7 h-7 mr-2 sm:w-[5rem] md:w-[8rem] " />
                         Next
                     </button>
                 </div>
