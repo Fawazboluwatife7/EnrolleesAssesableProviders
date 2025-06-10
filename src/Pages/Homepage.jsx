@@ -704,29 +704,28 @@ const Homepage = () => {
             </div>
 
             {FilteredProviders?.length > itemsPerPage && (
-                <div className="flex justify-center mt-4 items-center gap-4">
+                <div className="flex justify-center items-center gap-4 mt-4 flex-wrap sm:flex-nowrap">
                     <button
-                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[10rem] md:w-[8rem] "
+                        className="flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-600 rounded-md"
                         disabled={currentPage === 1}
                         onClick={() =>
                             setCurrentPage((prev) => Math.max(prev - 1, 1))
                         }
                     >
-                        <MdSkipPrevious className="w-7 h-7 mr-2 sm:w-[5rem] md:w-[8rem] " />
+                        <MdSkipPrevious className="w-5 h-5" />
                         Previous
                     </button>
 
-                    {/* Show "Pages Left: X" */}
-                    <span className="text-gray-700 text-lg font-semibold sm:w-[3px] md:w-[7px] ">
+                    <span className="text-gray-700 text-lg font-semibold whitespace-nowrap">
                         Page {currentPage} of {totalPages} Pages
                     </span>
 
                     <button
-                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[10rem] md:w-[8rem] "
+                        className="flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-600 rounded-md"
                         disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                     >
-                        <CgPlayTrackNext className="w-7 h-7 mr-2 sm:w-[3rem] md:w-[8rem] " />
+                        <CgPlayTrackNext className="w-5 h-5" />
                         Next
                     </button>
                 </div>
