@@ -704,28 +704,29 @@ const Homepage = () => {
             </div>
 
             {FilteredProviders?.length > itemsPerPage && (
-                <div className="flex justify-center items-center gap-4 mt-4 flex-wrap sm:flex-nowrap">
+                <div className="flex justify-center mt-4 items-center gap-4">
                     <button
-                        className="flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-600 rounded-md"
+                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[10rem] md:w-[8rem] "
                         disabled={currentPage === 1}
                         onClick={() =>
                             setCurrentPage((prev) => Math.max(prev - 1, 1))
                         }
                     >
-                        <MdSkipPrevious className="w-2 h-5" />
+                        <MdSkipPrevious className="w-7 h-7 mr-2" />
                         Previous
                     </button>
 
-                    <span className="text-gray-700 text-lg font-semibold whitespace-nowrap">
+                    {/* Show "Pages Left: X" */}
+                    <span className="text-gray-700 text-lg font-semibold  whitespace-nowrap">
                         Page {currentPage} of {totalPages} Pages
                     </span>
 
                     <button
-                        className="flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-600 rounded-md"
+                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[10rem] md:w-[8rem] "
                         disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                     >
-                        <CgPlayTrackNext className="w-2 h-5" />
+                        <CgPlayTrackNext className="w-7 h-7 mr-2" />
                         Next
                     </button>
                 </div>
