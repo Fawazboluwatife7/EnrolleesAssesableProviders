@@ -671,66 +671,66 @@ const Homepage = () => {
                         )}
                     </tbody>
                 </table>
-            </div>
 
-            <button
-                type="button"
-                onClick={GetFilteredProviders}
-                className="bg-green-500 text-white px-4 py-2 rounded mt-7 hover:bg-green-600 flex  sm:w-[10rem] md:w-[8rem]  "
-            >
-                <BsSearch className=" text-white w-6 h-5 pt-1" />
-                Search
-            </button>
+                <button
+                    type="button"
+                    onClick={GetFilteredProviders}
+                    className="bg-green-500 text-white px-4 py-2 rounded mt-7 hover:bg-green-600 flex  sm:w-[10rem] md:w-[8rem]  "
+                >
+                    <BsSearch className=" text-white w-6 h-5 pt-1" />
+                    Search
+                </button>
 
-            <div className=" flex justify-items-end justify-end">
-                {isSubmitting ? (
-                    <button
-                        disabled
-                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
-                    >
-                        <FaSpinner className="animate-spin text-xl" />
-                        Sending Email
-                    </button>
-                ) : (
-                    <button
-                        type="button"
-                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
-                        onClick={handleExportAndSendEmail}
-                    >
-                        <IoIosSend className=" text-white pt-1 h-6 w-6" />
-                        Send Via Email...
-                    </button>
+                <div className=" flex justify-items-end justify-end">
+                    {isSubmitting ? (
+                        <button
+                            disabled
+                            className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
+                        >
+                            <FaSpinner className="animate-spin text-xl" />
+                            Sending Email
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
+                            onClick={handleExportAndSendEmail}
+                        >
+                            <IoIosSend className=" text-white pt-1 h-6 w-6" />
+                            Send Via Email...
+                        </button>
+                    )}
+                </div>
+
+                {FilteredProviders?.length > itemsPerPage && (
+                    <div className="flex justify-center mt-4 items-center gap-4">
+                        <button
+                            className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[2rem] md:w-[10rem] "
+                            disabled={currentPage === 1}
+                            onClick={() =>
+                                setCurrentPage((prev) => Math.max(prev - 1, 1))
+                            }
+                        >
+                            <MdSkipPrevious className="w-7 h-7 mr-2" />
+                            Previous
+                        </button>
+
+                        {/* Show "Pages Left: X" */}
+                        <span className="text-gray-700 text-lg font-semibold  whitespace-nowrap">
+                            Page {currentPage} of {totalPages} Pages
+                        </span>
+
+                        <button
+                            className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[2rem] md:w-[10rem] "
+                            disabled={currentPage >= totalPages}
+                            onClick={() => setCurrentPage((prev) => prev + 1)}
+                        >
+                            <CgPlayTrackNext className="w-7 h-7 mr-2" />
+                            Next
+                        </button>
+                    </div>
                 )}
             </div>
-
-            {FilteredProviders?.length > itemsPerPage && (
-                <div className="flex justify-center mt-4 items-center gap-4">
-                    <button
-                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[2rem] md:w-[10rem] "
-                        disabled={currentPage === 1}
-                        onClick={() =>
-                            setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                    >
-                        <MdSkipPrevious className="w-7 h-7 mr-2" />
-                        Previous
-                    </button>
-
-                    {/* Show "Pages Left: X" */}
-                    <span className="text-gray-700 text-lg font-semibold  whitespace-nowrap">
-                        Page {currentPage} of {totalPages} Pages
-                    </span>
-
-                    <button
-                        className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[2rem] md:w-[10rem] "
-                        disabled={currentPage >= totalPages}
-                        onClick={() => setCurrentPage((prev) => prev + 1)}
-                    >
-                        <CgPlayTrackNext className="w-7 h-7 mr-2" />
-                        Next
-                    </button>
-                </div>
-            )}
         </div>
     );
 };
