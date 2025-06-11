@@ -113,11 +113,12 @@ const Homepage = () => {
         }
     }
 
+    console.log(selectedLga.value);
     async function GetFilteredProviders() {
         setisLoading(true);
         try {
             const providers = await fetch(
-                `${apiUrl}api/EnrolleeProfile/GetEnrolleeProvidersListsAll?schemeid=0&MinimumID=0&NoOfRecords=50020&pageSize=20000&ProviderName=&TypeID=0&StateID=${selectedState.value}&LGAID=${selectedLga.Value}&enrolleeid=${enrolleeId}&provider_id=0`,
+                `${apiUrl}api/EnrolleeProfile/GetEnrolleeProvidersListsAll?schemeid=0&MinimumID=0&NoOfRecords=50020&pageSize=20000&ProviderName=&TypeID=0&StateID=${selectedState.value}&LGAID=${selectedLga.value}&enrolleeid=${enrolleeId}&provider_id=0`,
                 {
                     method: "GET",
                 },
