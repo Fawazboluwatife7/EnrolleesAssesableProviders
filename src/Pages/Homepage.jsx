@@ -113,7 +113,6 @@ const Homepage = () => {
         }
     }
 
-    console.log(selectedLga.value);
     async function GetFilteredProviders() {
         setisLoading(true);
         try {
@@ -594,14 +593,11 @@ const Homepage = () => {
                     <thead className="text-base uppercase bg-white border-b border-gray-200 sticky top-0 z-10">
                         <tr className="border-b border-gray-200 bg-white">
                             <th className="px-6 py-3 text-[13px]">S/N</th>
-
                             <th className="px-3 py-3 text-[13px]">Provider</th>
                             <th className="px-3 py-3 text-[13px]">
                                 Speciality
                             </th>
-
                             <th className="px-3 py-3 text-[13px]">Address</th>
-                            <th className="px-3 py-3 text-[13px]">Email</th>
                         </tr>
                     </thead>
 
@@ -646,12 +642,6 @@ const Homepage = () => {
                                     <td className="px-3 py-3 text-[13px]">
                                         {enrollee.add1 ||
                                             enrollee.ProviderAddress ||
-                                            "N/A"}
-                                    </td>
-
-                                    <td className="px-3 py-3 text-[13px]">
-                                        {enrollee.Email ||
-                                            enrollee.email ||
                                             "N/A"}
                                     </td>
                                 </tr>
@@ -717,7 +707,7 @@ const Homepage = () => {
                         </button>
 
                         {/* Show "Pages Left: X" */}
-                        <span className="text-gray-700 text-lg font-semibold  whitespace-nowrap sm:text-[7px] md:text-[7px]">
+                        <span className="text-gray-700 text-lg font-semibold  whitespace-nowrap sm:text-[15px] md:text-[15px]">
                             Page {currentPage} of {totalPages} Pages
                         </span>
 
