@@ -10,7 +10,6 @@ import { CgPlayTrackNext } from "react-icons/cg";
 import { MdSkipPrevious } from "react-icons/md";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-
 import { BsSearch } from "react-icons/bs";
 
 const Homepage = () => {
@@ -21,6 +20,10 @@ const Homepage = () => {
     const [scheme, setScheme] = useState([]);
     const [gender, setGender] = useState([]);
     const [lga, setLga] = useState([]);
+    const [searchProviders, setSearchProviders] = useState("");
+    const [searchClicked, setSearchClicked] = useState(false);
+    const [enrolleeExists, setEnrolleeExists] = useState(true);
+
     const [selectedState, setState] = useState({
         Text: "",
         Value: "",
@@ -97,6 +100,9 @@ const Homepage = () => {
         if (selectedState.value) GetLGA();
     }, [selectedState.value]);
 
+    const handleSearch = (e) => {
+        setSearchProviders(e.target.value);
+    };
     useEffect(() => {
         if (selectedLga.Value) GetFilteredProviders();
     }, [selectedLga.Value]);
@@ -113,8 +119,12 @@ const Homepage = () => {
         }
     }
 
+    //Read later
+
     async function GetFilteredProviders() {
+        setSearchClicked(true);
         setisLoading(true);
+
         try {
             const providers = await fetch(
                 `${apiUrl}api/EnrolleeProfile/GetEnrolleeProvidersListsAll?schemeid=0&MinimumID=0&NoOfRecords=50020&pageSize=20000&ProviderName=&TypeID=0&StateID=${selectedState.value}&LGAID=${selectedLga.value}&enrolleeid=${enrolleeId}&provider_id=0`,
@@ -298,12 +308,62 @@ const Homepage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    const totalPages = Math.ceil(FilteredProviders?.length / itemsPerPage);
+    // const filteredData = searchProviders
+    //     ? FilteredProviders.filter(
+    //           (item) =>
+    //               item.FullName?.toLowerCase().includes(searchProviders) ||
+    //               item.provider?.toLowerCase().includes(searchProviders) ||
+    //               item.Specialty?.toLowerCase().includes(searchProviders) ||
+    //               item.Discipline?.toLowerCase().includes(searchProviders) ||
+    //               item.add1?.toLowerCase().includes(searchProviders) ||
+    //               item.ProviderAddress?.toLowerCase().includes(searchProviders),
+    //       )
+    //     : FilteredProviders;
+
+    const filteredData = searchProviders
+        ? FilteredProviders.filter(
+              (item) =>
+                  (item.FullName || item.provider || "")
+                      .toLowerCase()
+                      .includes(searchProviders.toLowerCase()) ||
+                  (item.Specialty || item.Discipline || "")
+                      .toLowerCase()
+                      .includes(searchProviders.toLowerCase()) ||
+                  (item.add1 || item.ProviderAddress || "")
+                      .toLowerCase()
+                      .includes(searchProviders.toLowerCase()),
+          )
+        : FilteredProviders;
+
+    // const sortedProviders = [...filteredData].sort((a, b) => {
+    //     const nameA = (a.FullName || a.provider || "").toLowerCase();
+    //     const nameB = (b.FullName || b.provider || "").toLowerCase();
+    //     return nameA.localeCompare(nameB);
+    // });
+
+    const sortedProviders = [...filteredData].sort((a, b) => {
+        const nameA = (a.FullName || a.provider || "").trim().toLowerCase();
+        const nameB = (b.FullName || b.provider || "").trim().toLowerCase();
+
+        const startsWithNumber = (str) => /^\d/.test(str);
+
+        const isNumberA = startsWithNumber(nameA);
+        const isNumberB = startsWithNumber(nameB);
+
+        if (isNumberA && !isNumberB) return 1; // Put A after B
+        if (!isNumberA && isNumberB) return -1; // Put A before B
+
+        return nameA.localeCompare(nameB);
+    });
+
+    const totalPages = Math.ceil(sortedProviders?.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
 
-    const paginatedResults = FilteredProviders?.slice(startIndex, endIndex);
+    const paginatedResults = sortedProviders?.slice(startIndex, endIndex);
+
     const [enrolleeBioData, SetEnrolleeBioData] = useState([]);
+    const [enrolleeUserName, setEnrolleeUserName] = useState([]);
 
     useEffect(() => {
         if (enrolleeId) {
@@ -312,7 +372,10 @@ const Homepage = () => {
     }, [enrolleeId]);
 
     async function SearchEnrolleeBiodata() {
+        setSearchClicked(true);
         try {
+            const numbs = `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`;
+            console.log("numbs", numbs);
             const response = await fetch(
                 `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`,
                 {
@@ -320,21 +383,67 @@ const Homepage = () => {
                 },
             );
             const data = await response.json();
-            console.log(
-                "enrolleeEmail",
-                data.result[0].Member_EmailAddress_One,
-            );
+            console.log("enrolleeEmail", data.result[0].Member_CustomerName);
 
             const email = data.result[0].Member_EmailAddress_One;
             if (!email) {
                 setErrorModal(true);
             }
+
+            if (data.result[0].Member_CustomerName.length > 0) {
+                setEnrolleeUserName(data.result[0].Member_CustomerName);
+                setEnrolleeExists(true);
+            } else {
+                setEnrolleeUserName(null);
+                setEnrolleeExists(false);
+            }
+
             SetEnrolleeBioData(data.result[0].Member_EmailAddress_One);
         } catch (error) {
             console.error("Error fetching enrollees:", error);
             setEnrollees([]);
         } finally {
             setIsLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        if (enrolleeUserName) {
+            SearchEnrolleeProviders();
+        }
+    }, [enrolleeUserName]);
+
+    async function SearchEnrolleeProviders() {
+        setSearchClicked(true);
+        setisLoading(true);
+
+        try {
+            const numbs = `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`;
+            console.log("numbs", numbs);
+            const response = await fetch(
+                `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`,
+                {
+                    method: "GET",
+                },
+            );
+            const data = await response.json();
+
+            const customerName = data.result[0]?.Member_CustomerName;
+
+            if (!customerName) {
+                setEnrolleeUserName(null);
+                setEnrolleeExists(false);
+                setFilteredProviders([]);
+                return;
+            }
+
+            setEnrolleeUserName(customerName);
+            setEnrolleeExists(true);
+            await GetFilteredProviders();
+        } catch (error) {
+            console.error("Error fetching enrollees:", error);
+        } finally {
+            setisLoading(false);
         }
     }
 
@@ -453,7 +562,6 @@ const Homepage = () => {
             ],
         );
 
-        // Define column headers
         const tableHeaders = [
             [
                 "Provider Name",
@@ -464,7 +572,6 @@ const Homepage = () => {
             ],
         ];
 
-        // Generate the table
         autoTable(doc, {
             head: tableHeaders,
             body: tableData,
@@ -475,7 +582,7 @@ const Homepage = () => {
                 overflow: "linebreak",
             },
             headStyles: {
-                fillColor: [200, 30, 54], // Red Leadway color
+                fillColor: [200, 30, 54],
                 textColor: 255,
                 fontStyle: "bold",
             },
@@ -520,7 +627,7 @@ const Homepage = () => {
         return pdfBase64;
     };
     return (
-        <div className="w-full p-7 h-[100vh] bg-gray-200 rounded-lg shadow-md">
+        <div className="w-full p-7 md:h-[120vh] sm:h-[120vh] lg:h[100vh] bg-gray-200 rounded-lg shadow-md">
             <div className=" flex justify-between">
                 <img
                     src="./leadway_health_logo-dashboard.png"
@@ -528,12 +635,10 @@ const Homepage = () => {
                     className="  sm:w-[5rem] md:w-[7rem] lg:w-[10rem] w-[7rem]"
                 />
             </div>
-
             <h1 className="font-bold text-center mb-6 gap-4 text-red-700 sm:text-[10px] md:text-[15px] lg:text-[30px] text-[16px]">
                 Please fill all required fields.
             </h1>
-
-            <div className="grid sm:grid-cols-1  md:grid-cols-3  lg:grid-cols-3 gap-4  sm:mx-[8rem] md:mx-[0.1rem] lg:mx-[0.1rem]">
+            <div className="grid sm:grid-cols-1  md:grid-cols-4  lg:grid-cols-4 gap-4  sm:mx-[8rem] md:mx-[0.1rem] lg:mx-[0.1rem]">
                 <div className="relative w-[full]  ">
                     <label className="block mb-2 text-gray-700 font-medium">
                         Input Enrollee Id
@@ -551,6 +656,16 @@ const Homepage = () => {
                             className="w-full h-11 pl-10 pr-3 rounded-lg border border-gray-300 focus:outline-none "
                         />
                     </div>
+                </div>
+                <div className="relative w-[full]  ">
+                    <label className="block mb-2 text-gray-700 font-medium">
+                        Enrollee Names
+                    </label>
+                    <input
+                        disabled
+                        placeholder={enrolleeUserName}
+                        className="w-full h-11 px-3 pr-3 rounded-lg border border-gray-300 focus:outline-none bg-white placeholder:text-black "
+                    />
                 </div>
                 <div className="relative w-[full]   ">
                     <label className="block mb-2 text-gray-700 font-medium">
@@ -576,10 +691,13 @@ const Homepage = () => {
                     </label>
                     <DateDropdown
                         key="service-dropdown"
-                        options={lga.map((type) => ({
-                            label: type.Text,
-                            value: type.Value,
-                        }))}
+                        options={lga
+                            .slice() // copy to avoid mutating original state
+                            .sort((a, b) => a.Text.localeCompare(b.Text))
+                            .map((type) => ({
+                                label: type.Text,
+                                value: type.Value,
+                            }))}
                         selectedValue={selectedLga}
                         sendSelection={(selectedOption) =>
                             setSelectedLga(selectedOption)
@@ -588,20 +706,41 @@ const Homepage = () => {
                     />
                 </div>
             </div>
+            <div className=" flex justify-between">
+                <div></div>
+                <button
+                    type="button"
+                    onClick={SearchEnrolleeProviders}
+                    className="bg-green-500 text-white  justify-items-end  px-4 py-2 rounded mt-3  flex  sm:w-[10rem] md:w-[8rem]  "
+                >
+                    {isLoading ? (
+                        <FaSpinner className="animate-spin w-5 h-5 mr-2" />
+                    ) : (
+                        <BsSearch className="w-5 h-5 mr-2" />
+                    )}
+                    Search
+                </button>
+            </div>
+
+            <input
+                type="text"
+                onChange={handleSearch}
+                value={searchProviders}
+                placeholder="Search provider, specialty, or address"
+                className="w-full md:w-[300px] sm:w-[200px] mt-3 mb-4 p-2 border border-gray-300 rounded outline-none"
+            />
             <div className="max-h-[400px] overflow-y-auto mt-5">
                 <table className="w-full text-sm text-left rtl:text-right text-black rounded-md border-collapse mt-3">
                     <thead className="text-base uppercase bg-white border-b border-gray-200 sticky top-0 z-10">
                         <tr className="border-b border-gray-200 bg-white">
-                            <th className="px-6 py-3 text-[13px]">S/N</th>
-                            <th className="px-3 py-3 text-[13px]">Provider</th>
-                            <th className="px-3 py-3 text-[13px]">
+                            <th className="px-6 py-3 text-[12px]">S/N</th>
+                            <th className="px-3 py-3 text-[12px]">Provider</th>
+                            <th className="px-3 py-3 text-[12px]">
                                 Speciality
                             </th>
-                            <th className="px-3 py-3 text-[13px]">Address</th>
+                            <th className="px-3 py-3 text-[12px]">Address</th>
                         </tr>
                     </thead>
-
-                    {/* Table Body */}
                     <tbody>
                         {isLoading ? (
                             <tr>
@@ -610,7 +749,7 @@ const Homepage = () => {
                                         <img
                                             src="./loaderx.gif"
                                             alt="Loading animation"
-                                            className="w-40 h-40" /* Adjust size as needed */
+                                            className="w-40 h-40"
                                         />
                                         <h3 className="text-gray-600 text-lg font-semibold">
                                             Please Wait, Fetching Providers...
@@ -618,8 +757,22 @@ const Homepage = () => {
                                     </div>
                                 </td>
                             </tr>
-                        ) : FilteredProviders &&
-                          FilteredProviders.length > 0 ? (
+                        ) : searchClicked && !enrolleeExists ? (
+                            <tr>
+                                <td colSpan="8" className="h-64 text-center">
+                                    <div className="flex flex-col items-center justify-center h-full space-y-2">
+                                        <img
+                                            src="./searchz.gif"
+                                            alt="No enrollee"
+                                            className="w-40 h-40"
+                                        />
+                                        <h3 className="text-gray-600 text-lg ml-9 font-semibold ">
+                                            Enrollee does not exist.
+                                        </h3>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : paginatedResults.length > 0 ? (
                             paginatedResults.map((enrollee, index) => (
                                 <tr
                                     key={index}
@@ -628,7 +781,6 @@ const Homepage = () => {
                                     <td className="px-3 py-3">
                                         {startIndex + index + 1}
                                     </td>
-
                                     <td className="px-3 py-3 text-[13px]">
                                         {enrollee.FullName ||
                                             enrollee.provider ||
@@ -648,80 +800,104 @@ const Homepage = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="8" className="h-10 text-center">
-                                    <div className="flex justify-center items-center">
+                                <td colSpan="8" className="h-64 text-center">
+                                    <div className="flex flex-col items-center justify-center h-full space-y-2">
                                         <img
                                             src="./searchz.gif"
                                             alt="No records found"
-                                            className=" w-[100px] h-[100px]"
+                                            className="w-40 h-40"
                                         />
+                                        <h3 className="text-gray-600 text-lg font-semibold">
+                                            No provider found
+                                        </h3>
                                     </div>
-                                    <h1>No provider found</h1>
                                 </td>
                             </tr>
                         )}
                     </tbody>
                 </table>
-
-                <button
-                    type="button"
-                    onClick={GetFilteredProviders}
-                    className="bg-green-500 text-white px-4 py-2 rounded mt-7 hover:bg-green-600 flex  sm:w-[10rem] md:w-[8rem]  "
-                >
-                    <BsSearch className=" text-white w-6 h-5 pt-1" />
-                    Search
-                </button>
-
-                <div className=" flex justify-items-end justify-end">
-                    {isSubmitting ? (
-                        <button
-                            disabled
-                            className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
-                        >
-                            <FaSpinner className="animate-spin text-xl" />
-                            Sending Email
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
-                            onClick={handleExportAndSendEmail}
-                        >
-                            <IoIosSend className=" text-white pt-1 h-6 w-6" />
-                            Send Via Email...
-                        </button>
-                    )}
-                </div>
-
-                {FilteredProviders?.length > itemsPerPage && (
-                    <div className="flex justify-center mt-4 items-center gap-4">
-                        <button
-                            className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[2rem] md:w-[10rem] "
-                            disabled={currentPage === 1}
-                            onClick={() =>
-                                setCurrentPage((prev) => Math.max(prev - 1, 1))
-                            }
-                        >
-                            <MdSkipPrevious className="w-7 h-7 mr-2" />
-                            Previous
-                        </button>
-
-                        {/* Show "Pages Left: X" */}
-                        <span className="text-gray-700 text-lg font-semibold  whitespace-nowrap sm:text-[15px] md:text-[15px]">
-                            Page {currentPage} of {totalPages} Pages
-                        </span>
-
-                        <button
-                            className="px-4 py-2 mx-1 bg-white text-red-600 border border-red-600 rounded-md flex sm:w-[2rem] md:w-[10rem] "
-                            disabled={currentPage >= totalPages}
-                            onClick={() => setCurrentPage((prev) => prev + 1)}
-                        >
-                            <CgPlayTrackNext className="w-7 h-7 mr-2" />
-                            Next
-                        </button>
-                    </div>
+            </div>
+            <div className=" flex justify-items-end justify-end mt-3">
+                {isSubmitting ? (
+                    <button
+                        disabled
+                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
+                    >
+                        <FaSpinner className="animate-spin text-xl" />
+                        Sending Email
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
+                        onClick={handleExportAndSendEmail}
+                    >
+                        <IoIosSend className=" text-white pt-1 h-6 w-6" />
+                        Send Via Email...
+                    </button>
                 )}
             </div>
+            {FilteredProviders?.length > itemsPerPage && (
+                <div className="flex items-center justify-center  space-x-1 mt-2">
+                    <button
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                        First
+                    </button>
+
+                    <button
+                        onClick={() =>
+                            setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                        Previous
+                    </button>
+
+                    {/* Page Numbers */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .slice(
+                            Math.max(0, currentPage - 3),
+                            Math.min(totalPages, currentPage + 2),
+                        )
+                        .map((page) => (
+                            <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className={`px-3 py-1 border rounded ${
+                                    currentPage === page
+                                        ? "bg-red-700 text-white"
+                                        : ""
+                                }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+
+                    <button
+                        onClick={() =>
+                            setCurrentPage((prev) =>
+                                Math.min(prev + 1, totalPages),
+                            )
+                        }
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+
+                    <button
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                        Last
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
