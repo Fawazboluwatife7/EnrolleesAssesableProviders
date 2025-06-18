@@ -127,7 +127,7 @@ const Homepage = () => {
 
         try {
             const providers = await fetch(
-                `${apiUrl}api/EnrolleeProfile/GetEnrolleeProvidersListsAll?schemeid=0&MinimumID=0&NoOfRecords=50020&pageSize=20000&ProviderName=&TypeID=0&StateID=${selectedState.value}&LGAID=${selectedLga.value}&enrolleeid=${enrolleeId}&provider_id=0`,
+                `${apiUrl}api/ListValues/GetProviderswithoutpharmacy?schemeid=0&MinimumID=0&NoOfRecords=10000&pageSize=1000&ProviderName=&TypeID=0&StateID=${selectedState.value}&LGAID=${selectedLga.value}&enrolleeid=${enrolleeId}&provider_id=0`,
                 {
                     method: "GET",
                 },
@@ -360,7 +360,13 @@ const Homepage = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
 
-    const paginatedResults = sortedProviders?.slice(startIndex, endIndex);
+    const uniqueProviders = sortedProviders.filter(
+        (provider, index, self) =>
+            index ===
+            self.findIndex((p) => p.ProviderID === provider.ProviderID),
+    );
+
+    const paginatedResults = uniqueProviders?.slice(startIndex, endIndex);
 
     const [enrolleeBioData, SetEnrolleeBioData] = useState([]);
     const [enrolleeUserName, setEnrolleeUserName] = useState([]);
@@ -447,19 +453,111 @@ const Homepage = () => {
         }
     }
 
+    // const handleExportAndSendEmail = async () => {
+    //     setIsSubmitting(true);
+    //     if (!enrolleeBioData || enrolleeBioData.trim() === "") {
+    //         alert("Enrollee email is missing. Cannot send email.");
+    //         setIsSubmitting(false);
+    //         return;
+    //     }
+
+    //     try {
+    //         // Generate PDF with the table data
+    //         const pdfBase64 = generatePdfBase64(FilteredProviders);
+
+    //         const postData = {
+    //             EmailAddress: enrolleeBioData,
+    //             CC: "",
+    //             BCC: "",
+    //             Subject: "Leadway Health Provider List",
+    //             MessageBody:
+    //                 "Dear Enrollee, here are the lists of providers that you can access under your plan. Please find the attached PDF document.",
+    //             Attachments: [
+    //                 {
+    //                     FileName: "Providers.pdf",
+    //                     ContentType: "application/pdf",
+    //                     Base64Data: pdfBase64,
+    //                 },
+    //             ],
+    //             Category: "",
+    //             UserId: 0,
+    //             ProviderId: 0,
+    //             ServiceId: 0,
+    //             Reference: "",
+    //             TransactionType: "",
+    //         };
+
+    //         console.log(
+    //             "Submitting email with PDF attachment:",
+    //             JSON.stringify(
+    //                 {
+    //                     ...postData,
+    //                     Attachments: [
+    //                         {
+    //                             ...postData.Attachments[0],
+    //                             Base64Data: pdfBase64,
+    //                         },
+    //                     ],
+    //                 },
+    //                 null,
+    //                 2,
+    //             ),
+    //         );
+
+    //         const response = await fetch(
+    //             `${apiUrl}api/EnrolleeProfile/SendEmailAlert`,
+    //             {
+    //                 method: "POST",
+    //                 headers: {
+    //                     "Content-Type": "application/json",
+    //                 },
+    //                 body: JSON.stringify(postData),
+    //             },
+    //         );
+
+    //         if (!response.ok) {
+    //             const errorText = await response.text();
+    //             throw new Error(
+    //                 `HTTP error! Status: ${response.status}, Details: ${errorText}`,
+    //             );
+    //         }
+
+    //         const data = await response.json();
+    //         alert("Email with PDF attachment sent successfully!");
+    //         console.log("Response:", data);
+    //     } catch (error) {
+    //         console.error("Error sending email:", error);
+    //         alert(`Failed to send email: ${error.message}`);
+    //     } finally {
+    //         setIsSubmitting(false);
+    //     }
+    // };
+
     const handleExportAndSendEmail = async () => {
         setIsSubmitting(true);
+
+        // Make sure email exists and is not just spaces
+        if (
+            !enrolleeBioData ||
+            typeof enrolleeBioData !== "string" ||
+            enrolleeBioData.trim() === ""
+        ) {
+            alert("Enrollee email is missing. Cannot send email.");
+            setIsSubmitting(false);
+            return;
+        }
+
         if (!FilteredProviders || FilteredProviders.length === 0) {
             alert("No data to export!");
+            setIsSubmitting(false);
             return;
         }
 
         try {
-            // Generate PDF with the table data
             const pdfBase64 = generatePdfBase64(FilteredProviders);
 
             const postData = {
-                EmailAddress: enrolleeBioData,
+                EmailAddress: enrolleeBioData.trim(), // Just in case
                 CC: "",
                 BCC: "",
                 Subject: "Leadway Health Provider List",
@@ -479,23 +577,6 @@ const Homepage = () => {
                 Reference: "",
                 TransactionType: "",
             };
-
-            console.log(
-                "Submitting email with PDF attachment:",
-                JSON.stringify(
-                    {
-                        ...postData,
-                        Attachments: [
-                            {
-                                ...postData.Attachments[0],
-                                Base64Data: pdfBase64,
-                            },
-                        ],
-                    },
-                    null,
-                    2,
-                ),
-            );
 
             const response = await fetch(
                 `${apiUrl}api/EnrolleeProfile/SendEmailAlert`,
