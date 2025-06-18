@@ -638,7 +638,7 @@ const Homepage = () => {
             <h1 className="font-bold text-center mb-6 gap-4 text-red-700 sm:text-[10px] md:text-[15px] lg:text-[30px] text-[16px]">
                 Please fill all required fields.
             </h1>
-            <div className="grid sm:grid-cols-1  md:grid-cols-4  lg:grid-cols-4 gap-4  sm:mx-[8rem] md:mx-[0.1rem] lg:mx-[0.1rem]">
+            <div className="grid sm:grid-cols-1  md:grid-cols-3  lg:grid-cols-3 gap-4  sm:mx-[8rem] md:mx-[0.1rem] lg:mx-[0.1rem]">
                 <div className="relative w-[full]  ">
                     <label className="block mb-2 text-gray-700 font-medium">
                         Input Enrollee Id
@@ -685,7 +685,7 @@ const Homepage = () => {
                     />
                 </div>
 
-                <div className="relative w-[full]  ">
+                {/* <div className="relative w-[full]  ">
                     <label className="block mb-2 text-gray-700 font-medium">
                         Local Govt
                     </label>
@@ -704,7 +704,7 @@ const Homepage = () => {
                         }
                         className="relative w-full h-[44px] rounded-lg outline-none"
                     />
-                </div>
+                </div> */}
             </div>
             <div className=" flex justify-between">
                 <div></div>
