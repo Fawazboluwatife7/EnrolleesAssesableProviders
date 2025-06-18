@@ -627,7 +627,7 @@ const Homepage = () => {
         return pdfBase64;
     };
     return (
-        <div className="w-full p-7 md:h-[120vh] sm:h-[120vh] lg:h[100vh] bg-gray-200 rounded-lg shadow-md">
+        <div className="w-full h-full p-7 md:h-[120vh] sm:h-[120vh] lg:h[100vh] bg-gray-200 rounded-lg shadow-md">
             <div className=" flex justify-between">
                 <img
                     src="./leadway_health_logo-dashboard.png"
