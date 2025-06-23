@@ -21,8 +21,10 @@ const Homepage = () => {
     const [gender, setGender] = useState([]);
     const [lga, setLga] = useState([]);
     const [searchProviders, setSearchProviders] = useState("");
+    const [enrolleeStatus, setEnrolleeStatus] = useState("");
     const [searchClicked, setSearchClicked] = useState(false);
     const [enrolleeExists, setEnrolleeExists] = useState(true);
+    const [showmodal, setShowModal] = useState(true);
 
     const [selectedState, setState] = useState({
         Text: "",
@@ -53,6 +55,7 @@ const Homepage = () => {
     const handleEnroleeeInputChange = (e) => {
         setEnrolleeId(e.target.value);
     };
+
     function DateDropdown({
         options,
         selectedValue,
@@ -112,7 +115,7 @@ const Homepage = () => {
                 method: "GET",
             });
             const response = await states.json();
-            console.log("states", response);
+
             SetStates(response);
         } catch (error) {
             console.error("Error fetching states", error);
@@ -134,6 +137,9 @@ const Homepage = () => {
             );
 
             const apiResponse = await providers.json();
+            if (apiResponse.status !== 200) {
+                setErrorMessage("enrollee does not exist");
+            }
             console.log("providers", apiResponse);
             setFilteredProviders(apiResponse.result);
         } catch (error) {
@@ -177,9 +183,12 @@ const Homepage = () => {
 
             const data = await response.json();
 
-            console.log("biodata", data.result[0].Member_ParentMemberUniqueID);
+            console.log(
+                "biodata",
+                data?.result[0]?.Member_ParentMemberUniqueID,
+            );
 
-            setBiodata(data.result[0].Member_ParentMemberUniqueID);
+            setBiodata(data?.result[0]?.Member_ParentMemberUniqueID);
         } catch (error) {
             console.error("get title:", error);
         }
@@ -356,24 +365,37 @@ const Homepage = () => {
         return nameA.localeCompare(nameB);
     });
 
-    const totalPages = Math.ceil(sortedProviders?.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-
     const uniqueProviders = sortedProviders.filter(
         (provider, index, self) =>
             index ===
             self.findIndex((p) => p.ProviderID === provider.ProviderID),
     );
 
+    const totalPages = Math.ceil(uniqueProviders?.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
     const paginatedResults = uniqueProviders?.slice(startIndex, endIndex);
+
+    console.log("Total Records:", uniqueProviders.length);
+    console.log("Total Pages:", totalPages);
+    console.log("Current Page:", currentPage);
+    console.log("Paginated Results:", paginatedResults.length);
 
     const [enrolleeBioData, SetEnrolleeBioData] = useState([]);
     const [enrolleeUserName, setEnrolleeUserName] = useState([]);
+    const [loader, setLoader] = useState(false);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages || 1);
+        }
+    }, [totalPages, currentPage]);
 
     useEffect(() => {
         if (enrolleeId) {
             SearchEnrolleeBiodata();
+            GetEnrolleeStatus();
         }
     }, [enrolleeId]);
 
@@ -389,27 +411,28 @@ const Homepage = () => {
                 },
             );
             const data = await response.json();
-            console.log("enrolleeEmail", data.result[0].Member_CustomerName);
+            console.log("enrolleeEmail", data?.result[0]?.Member_CustomerName);
 
-            const email = data.result[0].Member_EmailAddress_One;
+            const email = data?.result[0]?.Member_EmailAddress_One;
             if (!email) {
                 setErrorModal(true);
             }
-
-            if (data.result[0].Member_CustomerName.length > 0) {
-                setEnrolleeUserName(data.result[0].Member_CustomerName);
+            console.log("xxx");
+            if (data?.result[0]?.Member_CustomerName.length > 0) {
+                setEnrolleeUserName(data?.result[0]?.Member_CustomerName);
                 setEnrolleeExists(true);
+                console.log("lll");
             } else {
+                console.log("zzz");
+                setErrorMessage("Enrollee does not exist");
                 setEnrolleeUserName(null);
                 setEnrolleeExists(false);
             }
-
-            SetEnrolleeBioData(data.result[0].Member_EmailAddress_One);
+            SetEnrolleeBioData(data?.result[0]?.Member_EmailAddress_One);
         } catch (error) {
             console.error("Error fetching enrollees:", error);
-            setEnrollees([]);
-        } finally {
-            setIsLoading(false);
+            // } finally {
+            //     setIsLoading(false);
         }
     }
 
@@ -446,6 +469,29 @@ const Homepage = () => {
             setEnrolleeUserName(customerName);
             setEnrolleeExists(true);
             await GetFilteredProviders();
+        } catch (error) {
+            console.error("Error fetching enrollees:", error);
+        } finally {
+            setisLoading(false);
+        }
+    }
+
+    async function GetEnrolleeStatus() {
+        try {
+            const numbs = `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`;
+            console.log("numbs", numbs);
+            const response = await fetch(
+                `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`,
+                {
+                    method: "GET",
+                },
+            );
+            const data = await response.json();
+            console.log(
+                "status",
+                data?.result[0]?.Member_MemberStatus_Description,
+            );
+            setEnrolleeStatus(data?.result[0]?.Member_MemberStatus_Description);
         } catch (error) {
             console.error("Error fetching enrollees:", error);
         } finally {
@@ -536,7 +582,6 @@ const Homepage = () => {
     const handleExportAndSendEmail = async () => {
         setIsSubmitting(true);
 
-        // Make sure email exists and is not just spaces
         if (
             !enrolleeBioData ||
             typeof enrolleeBioData !== "string" ||
@@ -707,6 +752,7 @@ const Homepage = () => {
 
         return pdfBase64;
     };
+
     return (
         <div className="w-full h-full p-7 md:h-[120vh] sm:h-[120vh] lg:h[100vh] bg-gray-200 rounded-lg shadow-md">
             <div className=" flex justify-between">
@@ -716,10 +762,16 @@ const Homepage = () => {
                     className="  sm:w-[5rem] md:w-[7rem] lg:w-[10rem] w-[7rem]"
                 />
             </div>
-            <h1 className="font-bold text-center mb-6 gap-4 text-red-700 sm:text-[10px] md:text-[15px] lg:text-[30px] text-[16px]">
-                Please fill all required fields.
-            </h1>
-            <div className="grid sm:grid-cols-1  md:grid-cols-3  lg:grid-cols-3 gap-4  sm:mx-[8rem] md:mx-[0.1rem] lg:mx-[0.1rem]">
+            <div className="font-bold text-center mb-6 gap-4 text-black sm:text-[10px] md:text-[15px] lg:text-[30px] text-[16px]">
+                <h1> Find the nearest Provider to you.</h1>{" "}
+                <h3 className=" text-red-700 md:text-[15px] sm:text-[10px]">
+                    {" "}
+                    Select from our network of hospital, laboratory and
+                    specialist across all the 36 states of Nigeria you can
+                    access.
+                </h3>
+            </div>
+            <div className="grid sm:grid-cols-1  md:grid-cols-2  lg:grid-cols-2 gap-4  sm:mx-[8rem] md:mx-[0.1rem] lg:mx-[0.1rem]">
                 <div className="relative w-[full]  ">
                     <label className="block mb-2 text-gray-700 font-medium">
                         Input Enrollee Id
@@ -748,7 +800,7 @@ const Homepage = () => {
                         className="w-full h-11 px-3 pr-3 rounded-lg border border-gray-300 focus:outline-none bg-white placeholder:text-black "
                     />
                 </div>
-                <div className="relative w-[full]   ">
+                {/* <div className="relative w-[full]   ">
                     <label className="block mb-2 text-gray-700 font-medium">
                         State of Residence
                     </label>
@@ -764,7 +816,7 @@ const Homepage = () => {
                         }
                         className="relative w-full h-[44px] rounded-lg outline-none"
                     />
-                </div>
+                </div> */}
 
                 {/* <div className="relative w-[full]  ">
                     <label className="block mb-2 text-gray-700 font-medium">
@@ -787,7 +839,7 @@ const Homepage = () => {
                     />
                 </div> */}
             </div>
-            <div className=" flex justify-between">
+            {/* <div className=" flex justify-between">
                 <div></div>
                 <button
                     type="button"
@@ -801,14 +853,13 @@ const Homepage = () => {
                     )}
                     Search
                 </button>
-            </div>
-
+            </div> */}
             <input
                 type="text"
                 onChange={handleSearch}
                 value={searchProviders}
-                placeholder="Search provider, specialty, or address"
-                className="w-full md:w-[300px] sm:w-[200px] mt-3 mb-4 p-2 border border-gray-300 rounded outline-none"
+                placeholder="Search provider, specialty, or location"
+                className="w-full md:w-[300px] sm:w-[200px] mt-5 mb-4 p-2 border border-gray-300 rounded outline-none"
             />
             <div className="max-h-[400px] overflow-y-auto mt-5">
                 <table className="w-full text-sm text-left rtl:text-right text-black rounded-md border-collapse mt-3">
@@ -816,14 +867,57 @@ const Homepage = () => {
                         <tr className="border-b border-gray-200 bg-white">
                             <th className="px-6 py-3 text-[12px]">S/N</th>
                             <th className="px-3 py-3 text-[12px]">Provider</th>
-                            <th className="px-3 py-3 text-[12px]">
-                                Speciality
-                            </th>
-                            <th className="px-3 py-3 text-[12px]">Address</th>
+                            <th className="px-3 py-3 text-[12px]">Specialty</th>
+                            <th className="px-3 py-3 text-[12px]">Location</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {isLoading ? (
+                        {!enrolleeExists ? (
+                            <tr>
+                                <td colSpan="8" className="h-64 text-center">
+                                    <div className="flex flex-col items-center justify-center h-full space-y-2">
+                                        <img
+                                            src="./searchz.gif"
+                                            alt="No enrollee"
+                                            className="w-40 h-40"
+                                        />
+                                        <h3 className="text-gray-600 text-lg ml-9 font-semibold ">
+                                            {errorMessage}
+                                        </h3>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : enrolleeStatus == "Terminated" ? (
+                            <tr>
+                                <td colSpan="8" className="h-64 text-center">
+                                    <div className=" py-16 justify-center h-full space-y-2 text-[15px] text-red-700 sm:text-[20px] md:text-[20px] ">
+                                        {enrolleeUserName} plan is currently
+                                        terminated.
+                                        <br />
+                                        Kindly reach out to the customer care on
+                                        07080627051/ 02012801051 <br />
+                                        or via healthcare@leadway.com to get
+                                        activated and access providers around
+                                        you.
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : enrolleeStatus == "Portal Registered" ? (
+                            <tr>
+                                <td colSpan="8" className="h-64 text-center">
+                                    <div className=" py-16 justify-center h-full space-y-2 text-[15px] text-red-700 sm:text-[20px] md:text-[20px] ">
+                                        {enrolleeUserName} is currently not
+                                        active.
+                                        <br />
+                                        Kindly reach out to the customer care on
+                                        07080627051/ 02012801051 <br />
+                                        or via healthcare@leadway.com to get
+                                        activated and access providers around
+                                        you.
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : isLoading ? (
                             <tr>
                                 <td colSpan="8" className="h-64 text-center">
                                     <div className="flex flex-col items-center justify-center h-full space-y-2">
@@ -898,86 +992,100 @@ const Homepage = () => {
                     </tbody>
                 </table>
             </div>
-            <div className=" flex justify-items-end justify-end mt-3">
-                {isSubmitting ? (
-                    <button
-                        disabled
-                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
-                    >
-                        <FaSpinner className="animate-spin text-xl" />
-                        Sending Email
-                    </button>
-                ) : (
-                    <button
-                        type="button"
-                        className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
-                        onClick={handleExportAndSendEmail}
-                    >
-                        <IoIosSend className=" text-white pt-1 h-6 w-6" />
-                        Send Via Email...
-                    </button>
-                )}
-            </div>
-            {FilteredProviders?.length > itemsPerPage && (
-                <div className="flex items-center justify-center  space-x-1 mt-2">
-                    <button
-                        onClick={() => setCurrentPage(1)}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1 border rounded disabled:opacity-50"
-                    >
-                        First
-                    </button>
-
-                    <button
-                        onClick={() =>
-                            setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                        disabled={currentPage === 1}
-                        className="px-3 py-1 border rounded disabled:opacity-50"
-                    >
-                        Previous
-                    </button>
-
-                    {/* Page Numbers */}
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .slice(
-                            Math.max(0, currentPage - 3),
-                            Math.min(totalPages, currentPage + 2),
-                        )
-                        .map((page) => (
+            {enrolleeStatus === "Terminated" ||
+            enrolleeStatus === "Portal Registered" ? (
+                <div></div>
+            ) : (
+                enrolleeUserName && (
+                    <div className="flex justify-items-end justify-end mt-3">
+                        {isSubmitting ? (
                             <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`px-3 py-1 border rounded ${
-                                    currentPage === page
-                                        ? "bg-red-700 text-white"
-                                        : ""
-                                }`}
+                                disabled
+                                className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
                             >
-                                {page}
+                                <FaSpinner className="animate-spin text-xl" />
+                                Sending Email
                             </button>
-                        ))}
+                        ) : (
+                            <button
+                                type="button"
+                                className="bg-red-700 text-white px-3 py-2 justify-items-end rounded hover:bg-red-600 flex gap-2"
+                                onClick={handleExportAndSendEmail}
+                            >
+                                <IoIosSend className="text-white pt-1 h-6 w-6" />
+                                Send Via Email...
+                            </button>
+                        )}
+                    </div>
+                )
+            )}
 
-                    <button
-                        onClick={() =>
-                            setCurrentPage((prev) =>
-                                Math.min(prev + 1, totalPages),
+            {enrolleeStatus == "Terminated" ||
+            enrolleeStatus == "Portal Registered" ||
+            !enrolleeExists ? (
+                <div></div>
+            ) : (
+                uniqueProviders?.length > itemsPerPage && (
+                    <div className="flex items-center justify-center  space-x-1 mt-2">
+                        <button
+                            onClick={() => setCurrentPage(1)}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                            First
+                        </button>
+
+                        <button
+                            onClick={() =>
+                                setCurrentPage((prev) => Math.max(prev - 1, 1))
+                            }
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                            Previous
+                        </button>
+
+                        {/* Page Numbers */}
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                            .slice(
+                                Math.max(0, currentPage - 3),
+                                Math.min(totalPages, currentPage + 2),
                             )
-                        }
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1 border rounded disabled:opacity-50"
-                    >
-                        Next
-                    </button>
+                            .map((page) => (
+                                <button
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`px-3 py-1 border rounded ${
+                                        currentPage === page
+                                            ? "bg-red-700 text-white"
+                                            : ""
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
 
-                    <button
-                        onClick={() => setCurrentPage(totalPages)}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1 border rounded disabled:opacity-50"
-                    >
-                        Last
-                    </button>
-                </div>
+                        <button
+                            onClick={() =>
+                                setCurrentPage((prev) =>
+                                    Math.min(prev + 1, totalPages),
+                                )
+                            }
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+
+                        <button
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                            Last
+                        </button>
+                    </div>
+                )
             )}
         </div>
     );
