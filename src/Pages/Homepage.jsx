@@ -19,7 +19,7 @@ const Homepage = () => {
     const [company, setCompany] = useState([]);
     const [scheme, setScheme] = useState([]);
     const [gender, setGender] = useState([]);
-    const [lga, setLga] = useState([]);
+    // const [uniqueEmailProviders, setUniqueEmailProviders] = useState([]);
     const [searchProviders, setSearchProviders] = useState("");
     const [enrolleeStatus, setEnrolleeStatus] = useState("");
     const [searchClicked, setSearchClicked] = useState(false);
@@ -371,16 +371,12 @@ const Homepage = () => {
             self.findIndex((p) => p.ProviderID === provider.ProviderID),
     );
 
+    // setUniqueEmailProviders(uniqueProviders);
     const totalPages = Math.ceil(uniqueProviders?.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
 
     const paginatedResults = uniqueProviders?.slice(startIndex, endIndex);
-
-    console.log("Total Records:", uniqueProviders.length);
-    console.log("Total Pages:", totalPages);
-    console.log("Current Page:", currentPage);
-    console.log("Paginated Results:", paginatedResults.length);
 
     const [enrolleeBioData, SetEnrolleeBioData] = useState([]);
     const [enrolleeUserName, setEnrolleeUserName] = useState([]);
@@ -417,7 +413,7 @@ const Homepage = () => {
             if (!email) {
                 setErrorModal(true);
             }
-            console.log("xxx");
+            console.log("xxx", data?.result[0]?.Member_EmailAddress_One);
             if (data?.result[0]?.Member_CustomerName.length > 0) {
                 setEnrolleeUserName(data?.result[0]?.Member_CustomerName);
                 setEnrolleeExists(true);
@@ -585,24 +581,30 @@ const Homepage = () => {
         if (
             !enrolleeBioData ||
             typeof enrolleeBioData !== "string" ||
-            enrolleeBioData.trim() === ""
+            enrolleeBioData.trim() === "" ||
+            enrolleeBioData.trim() === "noemail.com"
         ) {
-            alert("Enrollee email is missing. Cannot send email.");
+            alert(
+                "Enrollee doesn't have a valid email address. Kindly reach out to customer care on 07080627051/ 02012801051 or via healthcare@leadway.com to update your profile.",
+            );
             setIsSubmitting(false);
             return;
         }
 
-        if (!FilteredProviders || FilteredProviders.length === 0) {
+        if (!uniqueProviders || uniqueProviders.length === 0) {
             alert("No data to export!");
             setIsSubmitting(false);
             return;
         }
 
+        console.log("confirm", FilteredProviders);
+        console.log("email", enrolleeBioData);
+
         try {
-            const pdfBase64 = generatePdfBase64(FilteredProviders);
+            const pdfBase64 = generatePdfBase64(uniqueProviders);
 
             const postData = {
-                EmailAddress: enrolleeBioData.trim(), // Just in case
+                EmailAddress: enrolleeBioData,
                 CC: "",
                 BCC: "",
                 Subject: "Leadway Health Provider List",
@@ -642,7 +644,11 @@ const Homepage = () => {
             }
 
             const data = await response.json();
-            alert("Email with PDF attachment sent successfully!");
+            if (data === "success") {
+                alert("Email with PDF attachment sent successfully!");
+            } else {
+                alert("Please search provider by name, specialty or location");
+            }
             console.log("Response:", data);
         } catch (error) {
             console.error("Error sending email:", error);
@@ -858,7 +864,7 @@ const Homepage = () => {
                 type="text"
                 onChange={handleSearch}
                 value={searchProviders}
-                placeholder="Search provider, specialty, or location"
+                placeholder="Search provider by name, specialty, or location"
                 className="w-full md:w-[300px] sm:w-[200px] mt-5 mb-4 p-2 border border-gray-300 rounded outline-none"
             />
             <div className="max-h-[400px] overflow-y-auto mt-5">
