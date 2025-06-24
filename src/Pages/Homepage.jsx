@@ -537,7 +537,9 @@ const Homepage = () => {
 
             const data = await response.json();
             if (data === "success") {
-                alert("Email with PDF attachment sent successfully!");
+                alert(
+                    `Provider list has been sent successfully as a pdf file to ${enrolleeBioData}`,
+                );
             } else {
                 alert("Please search provider by name, specialty or location");
             }
