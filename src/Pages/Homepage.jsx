@@ -20,6 +20,7 @@ const Homepage = () => {
     const [uniqueEmailProviders, setUniqueEmailProviders] = useState([]);
     const [searchProviders, setSearchProviders] = useState("");
     const [enrolleeStatus, setEnrolleeStatus] = useState("");
+    const [enrolleeScheme, SetEnrolleeScheme] = useState("");
     const [searchClicked, setSearchClicked] = useState(false);
     const [enrolleeExists, setEnrolleeExists] = useState(true);
 
@@ -127,7 +128,7 @@ const Homepage = () => {
 
         try {
             const providers = await fetch(
-                `${apiUrl}api/ListValues/GetProviderswithoutpharmacy?schemeid=0&MinimumID=0&NoOfRecords=10000&pageSize=1000&ProviderName=&TypeID=0&StateID=${selectedState.value}&LGAID=${selectedLga.value}&enrolleeid=${enrolleeId}&provider_id=0`,
+                `${apiUrl}api/ListValues/GetProviderswithoutpharmacy?schemeid=${enrolleeScheme}&MinimumID=0&NoOfRecords=10000&pageSize=1000&ProviderName=&TypeID=0&StateID=${selectedState.value}&LGAID=${selectedLga.value}&enrolleeid=${enrolleeId}&provider_id=0`,
                 {
                     method: "GET",
                 },
@@ -317,6 +318,8 @@ const Homepage = () => {
                 setEnrolleeExists(false);
             }
             SetEnrolleeBioData(data?.result[0]?.Member_EmailAddress_One);
+            SetEnrolleeScheme(data?.result[0]?.Member_PlanID);
+            console.log("scheme", data?.result[0]?.Member_PlanID);
         } catch (error) {
             console.error("Error fetching enrollees:", error);
         }
