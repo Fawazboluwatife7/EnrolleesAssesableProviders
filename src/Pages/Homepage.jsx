@@ -14,17 +14,14 @@ import { BsSearch } from "react-icons/bs";
 
 const Homepage = () => {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const [title, setTitle] = useState([]);
-    const [marital, setMarital] = useState([]);
-    const [company, setCompany] = useState([]);
+
     const [scheme, setScheme] = useState([]);
-    const [gender, setGender] = useState([]);
-    // const [uniqueEmailProviders, setUniqueEmailProviders] = useState([]);
+
+    const [uniqueEmailProviders, setUniqueEmailProviders] = useState([]);
     const [searchProviders, setSearchProviders] = useState("");
     const [enrolleeStatus, setEnrolleeStatus] = useState("");
     const [searchClicked, setSearchClicked] = useState(false);
     const [enrolleeExists, setEnrolleeExists] = useState(true);
-    const [showmodal, setShowModal] = useState(true);
 
     const [selectedState, setState] = useState({
         Text: "",
@@ -217,117 +214,8 @@ const Homepage = () => {
         }
     }
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-
-        if (file) {
-            const reader = new FileReader();
-
-            reader.onloadend = () => {
-                const base64String = reader.result.split(",")[1];
-
-                setFormData((prev) => ({
-                    ...prev,
-                    passport: {
-                        name: file.name,
-                        base64: base64String,
-                        type: file.type,
-                    },
-                }));
-            };
-
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handleDeleteDependant = (indexToRemove) => {
-        setDependants((prev) =>
-            prev.filter((_, index) => index !== indexToRemove),
-        );
-    };
-
-    const handleDependantFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64String = reader.result.split(",")[1];
-            setDependantData((prev) => ({
-                ...prev,
-                passport: {
-                    name: file.name,
-                    type: file.type,
-                    base64: base64String,
-                },
-            }));
-        };
-        reader.readAsDataURL(file);
-    };
-
-    function logout() {
-        navigate("/");
-        localStorage.clear();
-    }
-
-    const handleDependantChange = (e) => {
-        const { name, value } = e.target;
-        setDependantData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleDependantImage = (e) => {
-        setDependantData((prev) => ({ ...prev, image: e.target.files[0] }));
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log("Form submitted:", { ...formData, dependants });
-        // Add your form submission logic here
-    };
-
-    const handleFullSubmission = async () => {
-        await Submit(); // first submit enrollee
-        // The enrolleeData and bioData updates will trigger the useEffect to handle dependants
-    };
-
-    const handleCompanySearchChange = (value) => {
-        setCompanySearch(value);
-        if (value.trim() === "") {
-            setFilteredCompanies([]);
-            return;
-        }
-        const results = company.filter((c) =>
-            c.GROUP_NAME.toLowerCase().includes(value.toLowerCase()),
-        );
-        setFilteredCompanies(results);
-    };
-
-    const handleCompanySelect = (selectedCompany) => {
-        setFormData({ ...formData, company: selectedCompany.GROUP_ID });
-        setSelectedGroupId(selectedCompany.GROUP_ID);
-        setCompanySearch(selectedCompany.GROUP_NAME);
-        setFilteredCompanies([]);
-    };
-
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
-
-    // const filteredData = searchProviders
-    //     ? FilteredProviders.filter(
-    //           (item) =>
-    //               item.FullName?.toLowerCase().includes(searchProviders) ||
-    //               item.provider?.toLowerCase().includes(searchProviders) ||
-    //               item.Specialty?.toLowerCase().includes(searchProviders) ||
-    //               item.Discipline?.toLowerCase().includes(searchProviders) ||
-    //               item.add1?.toLowerCase().includes(searchProviders) ||
-    //               item.ProviderAddress?.toLowerCase().includes(searchProviders),
-    //       )
-    //     : FilteredProviders;
 
     const filteredData = searchProviders
         ? FilteredProviders.filter(
@@ -343,12 +231,6 @@ const Homepage = () => {
                       .includes(searchProviders.toLowerCase()),
           )
         : FilteredProviders;
-
-    // const sortedProviders = [...filteredData].sort((a, b) => {
-    //     const nameA = (a.FullName || a.provider || "").toLowerCase();
-    //     const nameB = (b.FullName || b.provider || "").toLowerCase();
-    //     return nameA.localeCompare(nameB);
-    // });
 
     const sortedProviders = [...filteredData].sort((a, b) => {
         const nameA = (a.FullName || a.provider || "").trim().toLowerCase();
@@ -371,7 +253,6 @@ const Homepage = () => {
             self.findIndex((p) => p.ProviderID === provider.ProviderID),
     );
 
-    // setUniqueEmailProviders(uniqueProviders);
     const totalPages = Math.ceil(uniqueProviders?.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -394,6 +275,17 @@ const Homepage = () => {
             GetEnrolleeStatus();
         }
     }, [enrolleeId]);
+
+    useEffect(() => {
+        if (sortedProviders && sortedProviders.length > 0) {
+            const uniqueProviders = sortedProviders.filter(
+                (provider, index, self) =>
+                    index ===
+                    self.findIndex((p) => p.ProviderID === provider.ProviderID),
+            );
+            setUniqueEmailProviders(uniqueProviders);
+        }
+    }, [sortedProviders]);
 
     async function SearchEnrolleeBiodata() {
         setSearchClicked(true);
@@ -427,8 +319,6 @@ const Homepage = () => {
             SetEnrolleeBioData(data?.result[0]?.Member_EmailAddress_One);
         } catch (error) {
             console.error("Error fetching enrollees:", error);
-            // } finally {
-            //     setIsLoading(false);
         }
     }
 
@@ -591,17 +481,19 @@ const Homepage = () => {
             return;
         }
 
-        if (!uniqueProviders || uniqueProviders.length === 0) {
+        if (!uniqueEmailProviders || uniqueEmailProviders.length === 0) {
             alert("No data to export!");
             setIsSubmitting(false);
             return;
         }
 
-        console.log("confirm", FilteredProviders);
+        console.log("confirm", uniqueEmailProviders);
         console.log("email", enrolleeBioData);
 
         try {
-            const pdfBase64 = generatePdfBase64(uniqueProviders);
+            const pdfBase64 = generatePdfBase64(uniqueEmailProviders);
+
+            console.log("prov", pdfBase64);
 
             const postData = {
                 EmailAddress: enrolleeBioData,
@@ -685,12 +577,12 @@ const Homepage = () => {
 
         // Format data for the table
         const tableData = data.map(
-            ({ provider, phone1, phone2, Discipline, ProviderAddress }) => [
-                provider?.trim() || "N/A",
-                phone1?.trim() || "N/A",
-                phone2?.trim() || "N/A",
-                Discipline || "N/A",
-                ProviderAddress || "N/A",
+            ({ FullName, Contact1, Contact2, Specialty, add1 }) => [
+                FullName?.trim() || "N/A",
+                Contact1?.trim() || "N/A",
+                Contact2?.trim() || "N/A",
+                Specialty || "N/A",
+                add1 || "N/A",
             ],
         );
 
