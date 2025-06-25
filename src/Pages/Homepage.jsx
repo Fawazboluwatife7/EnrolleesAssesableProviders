@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { IoIosSend } from "react-icons/io";
 import { useState } from "react";
 import { MdAdd } from "react-icons/md";
@@ -17,7 +17,6 @@ const Homepage = () => {
 
     const [scheme, setScheme] = useState([]);
 
-    const [uniqueEmailProviders, setUniqueEmailProviders] = useState([]);
     const [searchProviders, setSearchProviders] = useState("");
     const [enrolleeStatus, setEnrolleeStatus] = useState("");
     const [enrolleeScheme, SetEnrolleeScheme] = useState("");
@@ -138,7 +137,7 @@ const Homepage = () => {
             if (apiResponse.status !== 200) {
                 setErrorMessage("enrollee does not exist");
             }
-            console.log("providers", apiResponse);
+
             setFilteredProviders(apiResponse.result);
         } catch (error) {
             console.error("Error fetching filtered providers", error);
@@ -157,7 +156,7 @@ const Homepage = () => {
             );
 
             const response = await lga.json();
-            console.log("Lga", response);
+
             setLga(response);
         } catch (error) {
             console.error("Error fetching lga", error);
@@ -181,11 +180,6 @@ const Homepage = () => {
 
             const data = await response.json();
 
-            console.log(
-                "biodata",
-                data?.result[0]?.Member_ParentMemberUniqueID,
-            );
-
             setBiodata(data?.result[0]?.Member_ParentMemberUniqueID);
         } catch (error) {
             console.error("get title:", error);
@@ -208,7 +202,7 @@ const Homepage = () => {
             );
 
             const data = await response.json();
-            console.log("scheme", data);
+
             setScheme(data.result);
         } catch (error) {
             console.error("get Marital:", error);
@@ -251,7 +245,7 @@ const Homepage = () => {
     const uniqueProviders = sortedProviders.filter(
         (provider, index, self) =>
             index ===
-            self.findIndex((p) => p.ProviderID === provider.ProviderID),
+            self.findIndex((p) => p.ProviderCode === provider.ProviderCode),
     );
 
     const totalPages = Math.ceil(uniqueProviders?.length / itemsPerPage);
@@ -277,22 +271,23 @@ const Homepage = () => {
         }
     }, [enrolleeId]);
 
-    useEffect(() => {
-        if (sortedProviders && sortedProviders.length > 0) {
-            const uniqueProviders = sortedProviders.filter(
-                (provider, index, self) =>
-                    index ===
-                    self.findIndex((p) => p.ProviderID === provider.ProviderID),
-            );
-            setUniqueEmailProviders(uniqueProviders);
-        }
+    const uniqueEmailProviders = useMemo(() => {
+        if (!sortedProviders || sortedProviders.length === 0) return [];
+
+        const seen = new Set();
+        return sortedProviders.filter((provider) => {
+            if (!provider.ProviderCode || seen.has(provider.ProviderCode))
+                return false;
+            seen.add(provider.ProviderCode);
+            return true;
+        });
     }, [sortedProviders]);
 
     async function SearchEnrolleeBiodata() {
         setSearchClicked(true);
         try {
             const numbs = `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`;
-            console.log("numbs", numbs);
+
             const response = await fetch(
                 `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`,
                 {
@@ -300,26 +295,21 @@ const Homepage = () => {
                 },
             );
             const data = await response.json();
-            console.log("enrolleeEmail", data?.result[0]?.Member_CustomerName);
 
             const email = data?.result[0]?.Member_EmailAddress_One;
             if (!email) {
                 setErrorModal(true);
             }
-            console.log("xxx", data?.result[0]?.Member_EmailAddress_One);
+
             if (data?.result[0]?.Member_CustomerName.length > 0) {
                 setEnrolleeUserName(data?.result[0]?.Member_CustomerName);
                 setEnrolleeExists(true);
-                console.log("lll");
             } else {
-                console.log("zzz");
                 setErrorMessage("Enrollee does not exist");
                 setEnrolleeUserName(null);
                 setEnrolleeExists(false);
             }
             SetEnrolleeBioData(data?.result[0]?.Member_EmailAddress_One);
-            SetEnrolleeScheme(data?.result[0]?.Member_PlanID);
-            console.log("scheme", data?.result[0]?.Member_PlanID);
         } catch (error) {
             console.error("Error fetching enrollees:", error);
         }
@@ -337,7 +327,7 @@ const Homepage = () => {
 
         try {
             const numbs = `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`;
-            console.log("numbs", numbs);
+
             const response = await fetch(
                 `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`,
                 {
@@ -368,7 +358,7 @@ const Homepage = () => {
     async function GetEnrolleeStatus() {
         try {
             const numbs = `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`;
-            console.log("numbs", numbs);
+
             const response = await fetch(
                 `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`,
                 {
@@ -376,97 +366,15 @@ const Homepage = () => {
                 },
             );
             const data = await response.json();
-            console.log(
-                "status",
-                data?.result[0]?.Member_MemberStatus_Description,
-            );
+
             setEnrolleeStatus(data?.result[0]?.Member_MemberStatus_Description);
+            SetEnrolleeScheme(data?.result[0]?.Member_PlanID);
         } catch (error) {
             console.error("Error fetching enrollees:", error);
         } finally {
             setisLoading(false);
         }
     }
-
-    // const handleExportAndSendEmail = async () => {
-    //     setIsSubmitting(true);
-    //     if (!enrolleeBioData || enrolleeBioData.trim() === "") {
-    //         alert("Enrollee email is missing. Cannot send email.");
-    //         setIsSubmitting(false);
-    //         return;
-    //     }
-
-    //     try {
-    //         // Generate PDF with the table data
-    //         const pdfBase64 = generatePdfBase64(FilteredProviders);
-
-    //         const postData = {
-    //             EmailAddress: enrolleeBioData,
-    //             CC: "",
-    //             BCC: "",
-    //             Subject: "Leadway Health Provider List",
-    //             MessageBody:
-    //                 "Dear Enrollee, here are the lists of providers that you can access under your plan. Please find the attached PDF document.",
-    //             Attachments: [
-    //                 {
-    //                     FileName: "Providers.pdf",
-    //                     ContentType: "application/pdf",
-    //                     Base64Data: pdfBase64,
-    //                 },
-    //             ],
-    //             Category: "",
-    //             UserId: 0,
-    //             ProviderId: 0,
-    //             ServiceId: 0,
-    //             Reference: "",
-    //             TransactionType: "",
-    //         };
-
-    //         console.log(
-    //             "Submitting email with PDF attachment:",
-    //             JSON.stringify(
-    //                 {
-    //                     ...postData,
-    //                     Attachments: [
-    //                         {
-    //                             ...postData.Attachments[0],
-    //                             Base64Data: pdfBase64,
-    //                         },
-    //                     ],
-    //                 },
-    //                 null,
-    //                 2,
-    //             ),
-    //         );
-
-    //         const response = await fetch(
-    //             `${apiUrl}api/EnrolleeProfile/SendEmailAlert`,
-    //             {
-    //                 method: "POST",
-    //                 headers: {
-    //                     "Content-Type": "application/json",
-    //                 },
-    //                 body: JSON.stringify(postData),
-    //             },
-    //         );
-
-    //         if (!response.ok) {
-    //             const errorText = await response.text();
-    //             throw new Error(
-    //                 `HTTP error! Status: ${response.status}, Details: ${errorText}`,
-    //             );
-    //         }
-
-    //         const data = await response.json();
-    //         alert("Email with PDF attachment sent successfully!");
-    //         console.log("Response:", data);
-    //     } catch (error) {
-    //         console.error("Error sending email:", error);
-    //         alert(`Failed to send email: ${error.message}`);
-    //     } finally {
-    //         setIsSubmitting(false);
-    //     }
-    // };
 
     const handleExportAndSendEmail = async () => {
         setIsSubmitting(true);
@@ -490,13 +398,8 @@ const Homepage = () => {
             return;
         }
 
-        console.log("confirm", uniqueEmailProviders);
-        console.log("email", enrolleeBioData);
-
         try {
             const pdfBase64 = generatePdfBase64(uniqueEmailProviders);
-
-            console.log("prov", pdfBase64);
 
             const postData = {
                 EmailAddress: enrolleeBioData,
@@ -582,12 +485,12 @@ const Homepage = () => {
 
         // Format data for the table
         const tableData = data.map(
-            ({ FullName, Contact1, Contact2, Specialty, add1 }) => [
-                FullName?.trim() || "N/A",
-                Contact1?.trim() || "N/A",
-                Contact2?.trim() || "N/A",
-                Specialty || "N/A",
-                add1 || "N/A",
+            ({ provider, phone1, phone2, Discipline, ProviderAddress }) => [
+                provider?.trim() || "N/A",
+                phone1?.trim() || "N/A",
+                phone2?.trim() || "N/A",
+                Discipline || "N/A",
+                ProviderAddress || "N/A",
             ],
         );
 
@@ -762,7 +665,7 @@ const Homepage = () => {
                 onChange={handleSearch}
                 value={searchProviders}
                 placeholder="Search provider by name, specialty, or location"
-                className="w-full md:w-[300px] sm:w-[200px] mt-5 mb-4 p-2 border border-gray-300 rounded outline-none"
+                className="w-full md:w-[350px] sm:w-[200px] mt-5 mb-4 p-2 border border-gray-300 rounded outline-none"
             />
             <div className="max-h-[400px] overflow-y-auto mt-5">
                 <table className="w-full text-sm text-left rtl:text-right text-black rounded-md border-collapse mt-3">
