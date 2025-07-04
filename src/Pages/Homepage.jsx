@@ -798,17 +798,17 @@ const Homepage = () => {
                                     <td className="px-3 py-3">
                                         {startIndex + index + 1}
                                     </td>
-                                    <td className="px-3 py-3 text-[13px]">
+                                    <td className="px-3 py-3 text-[13px] whitespace-nowrap">
                                         {enrollee.FullName ||
                                             enrollee.provider ||
                                             "N/A"}
                                     </td>
-                                    <td className="px-3 py-3 text-[13px]">
+                                    <td className="px-3 py-3 text-[13px] whitespace-nowrap">
                                         {enrollee.Specialty ||
                                             enrollee.Discipline ||
                                             "N/A"}
                                     </td>
-                                    <td className="px-3 py-3 text-[13px]">
+                                    <td className="px-3 py-3 text-[13px] whitespace-nowrap">
                                         {enrollee.add1 ||
                                             enrollee.ProviderAddress ||
                                             "N/A"}
