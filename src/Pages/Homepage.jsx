@@ -808,7 +808,7 @@ const Homepage = () => {
                                             enrollee.Discipline ||
                                             "N/A"}
                                     </td>
-                                    <td className="px-3 py-3 text-[13px] whitespace-nowrap">
+                                    <td className="px-3 py-3 text-[13px] ">
                                         {enrollee.add1 ||
                                             enrollee.ProviderAddress ||
                                             "N/A"}
