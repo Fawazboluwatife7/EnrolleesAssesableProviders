@@ -884,7 +884,7 @@ const Homepage = () => {
                             disabled={currentPage === 1}
                             className="px-3 py-1 border rounded disabled:opacity-50"
                         >
-                            Previous
+                            <MdSkipPrevious className="w-7 h-7 mr-2" />
                         </button>
 
                         {/* Page Numbers */}
@@ -916,7 +916,7 @@ const Homepage = () => {
                             disabled={currentPage === totalPages}
                             className="px-3 py-1 border rounded disabled:opacity-50"
                         >
-                            Next
+                            <CgPlayTrackNext className="w-7 h-7 mr-2" />
                         </button>
 
                         <button
