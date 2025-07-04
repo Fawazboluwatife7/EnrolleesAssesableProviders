@@ -890,8 +890,8 @@ const Homepage = () => {
                         {/* Page Numbers */}
                         {Array.from({ length: totalPages }, (_, i) => i + 1)
                             .slice(
-                                Math.max(0, currentPage - 3),
-                                Math.min(totalPages, currentPage + 2),
+                                Math.max(0, currentPage - 2),
+                                Math.min(totalPages, currentPage + 1),
                             )
                             .map((page) => (
                                 <button
