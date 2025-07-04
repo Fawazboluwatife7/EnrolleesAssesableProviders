@@ -103,9 +103,9 @@ const Homepage = () => {
     const handleSearch = (e) => {
         setSearchProviders(e.target.value);
     };
-    useEffect(() => {
-        if (selectedLga.Value) GetFilteredProviders();
-    }, [selectedLga.Value]);
+    // useEffect(() => {
+    //     if (selectedLga.Value) GetFilteredProviders();
+    // }, [selectedLga.Value]);
     async function GetStates() {
         try {
             const states = await fetch(`${apiUrl}api/ListValues/GetStates`, {
@@ -120,19 +120,30 @@ const Homepage = () => {
     }
 
     //Read later
-
-    async function GetFilteredProviders() {
+    console.log("xxx", enrolleeScheme);
+    async function GetFilteredProviders(enrolleeSchemeId) {
         setSearchClicked(true);
         setisLoading(true);
 
+        console.log("xxxv", enrolleeSchemeId);
+
+        const provz = await fetch(
+            `${apiUrl}api/ListValues/GetProviderswithoutpharmacy?schemeid=${enrolleeSchemeId}&MinimumID=0&NoOfRecords=10000&pageSize=1000&ProviderName=&TypeID=0&StateID=0&LGAID=0&enrolleeid=${enrolleeId}&provider_id=0`,
+            {
+                method: "GET",
+            },
+        );
+
+        console.log("full", provz);
+
         try {
             const providers = await fetch(
-                `${apiUrl}api/ListValues/GetProviderswithoutpharmacy?schemeid=${enrolleeScheme}&MinimumID=0&NoOfRecords=10000&pageSize=1000&ProviderName=&TypeID=0&StateID=${selectedState.value}&LGAID=${selectedLga.value}&enrolleeid=${enrolleeId}&provider_id=0`,
+                `${apiUrl}api/ListValues/GetProviderswithoutpharmacy?schemeid=${enrolleeSchemeId}&MinimumID=0&NoOfRecords=10000&pageSize=1000&ProviderName=&TypeID=0&StateID=0&LGAID=0&enrolleeid=${enrolleeId}&provider_id=0`,
                 {
                     method: "GET",
                 },
             );
-
+            console.log("fullxx", provz);
             const apiResponse = await providers.json();
             if (apiResponse.status !== 200) {
                 setErrorMessage("enrollee does not exist");
@@ -268,6 +279,7 @@ const Homepage = () => {
         if (enrolleeId) {
             SearchEnrolleeBiodata();
             GetEnrolleeStatus();
+            GetEnrolleeScheme();
         }
     }, [enrolleeId]);
 
@@ -347,7 +359,11 @@ const Homepage = () => {
 
             setEnrolleeUserName(customerName);
             setEnrolleeExists(true);
-            await GetFilteredProviders();
+            console.log("ann");
+            const res = await GetEnrolleeScheme();
+            if (res) {
+                await GetFilteredProviders();
+            }
         } catch (error) {
             console.error("Error fetching enrollees:", error);
         } finally {
@@ -368,7 +384,27 @@ const Homepage = () => {
             const data = await response.json();
 
             setEnrolleeStatus(data?.result[0]?.Member_MemberStatus_Description);
+        } catch (error) {
+            console.error("Error fetching enrollees:", error);
+        } finally {
+            setisLoading(false);
+        }
+    }
+    async function GetEnrolleeScheme() {
+        try {
+            const numbs = `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`;
+
+            const response = await fetch(
+                `${apiUrl}api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`,
+                {
+                    method: "GET",
+                },
+            );
+            const data = await response.json();
+
             SetEnrolleeScheme(data?.result[0]?.Member_PlanID);
+            await GetFilteredProviders(data?.result[0]?.Member_PlanID);
+            // console.log("data", data?.result[0]?.Member_PlanID);
         } catch (error) {
             console.error("Error fetching enrollees:", error);
         } finally {
@@ -560,7 +596,7 @@ const Homepage = () => {
     };
 
     return (
-        <div className="w-full h-full p-7 md:h-[120vh] sm:h-[120vh] lg:h[100vh] bg-gray-200 rounded-lg shadow-md">
+        <div className="w-full  p-7 md:h-[120vh] sm:h-[120vh] lg:h[100vh]  rounded-lg ">
             <div className=" flex justify-between">
                 <img
                     src="./leadway_health_logo-dashboard.png"
