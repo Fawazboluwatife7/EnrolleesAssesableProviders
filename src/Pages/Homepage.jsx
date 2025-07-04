@@ -798,12 +798,12 @@ const Homepage = () => {
                                     <td className="px-3 py-3">
                                         {startIndex + index + 1}
                                     </td>
-                                    <td className="px-3 py-3 text-[13px] whitespace-nowrap">
+                                    <td className="px-3 py-3 text-[13px] ">
                                         {enrollee.FullName ||
                                             enrollee.provider ||
                                             "N/A"}
                                     </td>
-                                    <td className="px-3 py-3 text-[13px] whitespace-nowrap">
+                                    <td className="px-3 py-3 text-[13px]">
                                         {enrollee.Specialty ||
                                             enrollee.Discipline ||
                                             "N/A"}
