@@ -952,7 +952,7 @@ const Homepage = () => {
                                 alt="email sent"
                                 className="w-50 h-28 mx-auto mb-4 pt-3"
                             />
-                            <h1 className="text-lg font-semibold text-white">
+                            <h1 className="text-10px font-semibold text-white">
                                 {modalMessage}
                             </h1>
                         </div>{" "}
@@ -974,7 +974,7 @@ const Homepage = () => {
                                 alt="email sent"
                                 className=" w-50 h-36 mx-auto mb-4"
                             />
-                            <h1 className="text-lg font-semibold text-white">
+                            <h1 className="text-10px font-semibold text-white">
                                 {modalErrorMessage}
                             </h1>
                         </div>{" "}
