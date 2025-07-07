@@ -950,7 +950,7 @@ const Homepage = () => {
                             <img
                                 src="./emailSent.png"
                                 alt="email sent"
-                                className="w-32 h-32 mx-auto mb-4" // Adjusted for better mobile balance
+                                className="w-24 h-32 mx-auto mb-4" // Adjusted for better mobile balance
                             />
                             <h1 className="text-sm sm:text-base md:text-lg lg:text-xl px-3 font-semibold text-white text-left">
                                 {modalMessage}
