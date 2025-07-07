@@ -945,14 +945,14 @@ const Homepage = () => {
 
             {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-red-700 rounded-lg shadow-lg p-6 w-[90%] max-w-md text-center relative ">
-                        <div className=" flex">
+                    <div className="bg-red-700 rounded-lg shadow-lg p-6 w-[90%] max-w-md text-center relative">
+                        <div className="flex items-center">
                             <img
                                 src="./emailSent.png"
                                 alt="email sent"
-                                className="w-50 h-28 mx-auto mb-4 pt-3"
+                                className="w-32 h-32 mx-auto mb-4" // Adjusted for better mobile balance
                             />
-                            <h1 className="text-10px font-semibold text-white">
+                            <h1 className="text-sm sm:text-base md:text-lg lg:text-xl px-3 font-semibold text-white text-left">
                                 {modalMessage}
                             </h1>
                         </div>{" "}
@@ -968,13 +968,13 @@ const Homepage = () => {
             {showErrorModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-red-700 rounded-lg shadow-lg p-6 w-[90%] max-w-md text-center relative">
-                        <div className=" flex">
+                        <div className="flex items-center">
                             <img
                                 src="./error.png"
                                 alt="email sent"
-                                className=" w-50 h-36 mx-auto mb-4"
+                                className="w-32 h-32 mx-auto mb-4" // Adjusted for better mobile balance
                             />
-                            <h1 className="text-10px font-semibold text-white">
+                            <h1 className="text-sm sm:text-base md:text-lg lg:text-xl px-3 font-semibold text-white text-left">
                                 {modalErrorMessage}
                             </h1>
                         </div>{" "}
