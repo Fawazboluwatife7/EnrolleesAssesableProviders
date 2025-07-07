@@ -11,6 +11,7 @@ import { MdSkipPrevious } from "react-icons/md";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { BsSearch } from "react-icons/bs";
+import Modal from "./Modal";
 
 const Homepage = () => {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
@@ -22,6 +23,10 @@ const Homepage = () => {
     const [enrolleeScheme, SetEnrolleeScheme] = useState("");
     const [searchClicked, setSearchClicked] = useState(false);
     const [enrolleeExists, setEnrolleeExists] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
+    const [showErrorModal, setErrorShowModal] = useState(false);
+    const [modalErrorMessage, setModalErrorMessage] = useState("");
 
     const [selectedState, setState] = useState({
         Text: "",
@@ -279,7 +284,7 @@ const Homepage = () => {
         if (enrolleeId) {
             SearchEnrolleeBiodata();
             GetEnrolleeStatus();
-            GetEnrolleeScheme();
+            //  GetEnrolleeScheme();
         }
     }, [enrolleeId]);
 
@@ -333,6 +338,7 @@ const Homepage = () => {
         }
     }, [enrolleeUserName]);
 
+    //enrolleeBiodata
     async function SearchEnrolleeProviders() {
         setSearchClicked(true);
         setisLoading(true);
@@ -360,10 +366,10 @@ const Homepage = () => {
             setEnrolleeUserName(customerName);
             setEnrolleeExists(true);
             console.log("ann");
-            const res = await GetEnrolleeScheme();
-            if (res) {
-                await GetFilteredProviders();
-            }
+            GetEnrolleeScheme();
+            // if (res) {
+            //     await GetFilteredProviders();
+            // }
         } catch (error) {
             console.error("Error fetching enrollees:", error);
         } finally {
@@ -421,15 +427,18 @@ const Homepage = () => {
             enrolleeBioData.trim() === "" ||
             enrolleeBioData.trim() === "noemail.com"
         ) {
-            alert(
+            setModalErrorMessage(
                 "Enrollee doesn't have a valid email address. Kindly reach out to customer care on 07080627051/ 02012801051 or via healthcare@leadway.com to update your profile.",
             );
+            setErrorShowModal(true);
+
             setIsSubmitting(false);
             return;
         }
 
         if (!uniqueEmailProviders || uniqueEmailProviders.length === 0) {
-            alert("No data to export!");
+            setModalErrorMessage("No data to export!");
+            setErrorShowModal(true);
             setIsSubmitting(false);
             return;
         }
@@ -479,11 +488,15 @@ const Homepage = () => {
 
             const data = await response.json();
             if (data === "success") {
-                alert(
-                    `Provider list has been sent successfully as a pdf file to ${enrolleeBioData}`,
+                setModalMessage(
+                    `Provider list has been sent successfully as a PDF file to ${enrolleeBioData}`,
                 );
+                setShowModal(true);
             } else {
-                alert("Please search provider by name, specialty or location");
+                setModalMessage(
+                    "Please search provider by name, specialty or location. Thank you",
+                );
+                setShowModal(true);
             }
             console.log("Response:", data);
         } catch (error) {
@@ -928,6 +941,51 @@ const Homepage = () => {
                         </button>
                     </div>
                 )
+            )}
+
+            {showModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-red-700 rounded-lg shadow-lg p-6 w-[90%] max-w-md text-center relative ">
+                        <div className=" flex">
+                            <img
+                                src="./emailSent.png"
+                                alt="email sent"
+                                className="w-50 h-28 mx-auto mb-4 pt-3"
+                            />
+                            <h1 className="text-lg font-semibold text-white">
+                                {modalMessage}
+                            </h1>
+                        </div>{" "}
+                        <button
+                            className="absolute top-2 right-3 text-white hover:text-black font-bold"
+                            onClick={() => setShowModal(false)}
+                        >
+                            X
+                        </button>
+                    </div>
+                </div>
+            )}
+            {showErrorModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-red-700 rounded-lg shadow-lg p-6 w-[90%] max-w-md text-center relative">
+                        <div className=" flex">
+                            <img
+                                src="./error.png"
+                                alt="email sent"
+                                className=" w-50 h-36 mx-auto mb-4"
+                            />
+                            <h1 className="text-lg font-semibold text-white">
+                                {modalErrorMessage}
+                            </h1>
+                        </div>{" "}
+                        <button
+                            className="absolute top-2 right-3 text-white hover:text-black font-bold"
+                            onClick={() => setErrorShowModal(false)}
+                        >
+                            X
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
